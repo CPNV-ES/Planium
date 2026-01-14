@@ -1,0 +1,37 @@
+<script setup>
+import {VcViewer, VcCompass, VcNavigation, VcTerrainProviderCesium, VcLayerImagery, VcImageryProviderOsm} from "vue-cesium";
+import {useMapController} from "@/controller/mapPreviewController.js";
+
+const { isViewerReady, viewerRef, onViewerReady } = useMapController()
+const props = defineProps({
+  lng: 46.82166054184684,
+  lat:  6.500465335539498
+})
+const camera = {
+  position: { lng: props.lng, lat: props.lat, height: 5000 },
+  heading: 0,
+      pitch: -45,
+      roll: 0
+}
+</script>
+
+<template>
+
+  <vc-viewer access-token="YOUR_ACCESS_TOKEN"
+             ref="viewerRef"
+             @ready="onViewerReady" :camera="camera">
+      <vc-layer-imagery>
+        <vc-imagery-provider-osm>
+
+        </vc-imagery-provider-osm>
+      </vc-layer-imagery>
+      <vc-imagery-provider-amap />
+    <template v-if="isViewerReady">
+      <vc-compass></vc-compass>
+      <vc-navigation></vc-navigation>
+      <vc-terrain-provider-cesium></vc-terrain-provider-cesium>
+    </template>
+  </vc-viewer>
+
+</template>
+
