@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "cesium": "^1.137.0",
-    "vue": "^3.5.26"
+    "vue": "^3.5.26",
+    "vue-cesium": "^3.2.12"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.18",
