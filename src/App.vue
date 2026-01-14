@@ -1,6 +1,5 @@
 <script setup>
 import CoordinateForm from "@/components/CoordinateForm.vue";
-import { VcViewer } from 'vue-cesium'
 
 </script>
 
