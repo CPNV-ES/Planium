@@ -1,6 +1,6 @@
 <script setup>
 import {VcViewer, VcCompass, VcNavigation, VcTerrainProviderCesium, VcLayerImagery, VcImageryProviderOsm} from "vue-cesium";
-import {onMounted, ref} from "vue";
+import {onMounted, ref, watchEffect} from "vue";
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
 
@@ -34,8 +34,22 @@ const onViewerReady = (readyObj) => {
 }
 
 // MOON ASSET
-const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2684829);
+watchEffect(async () => { // wait for viewer to be ready before loading asset
+  if (viewerRef.value) {
+    try {
+      // init Cesium and viewer from the component promise
+      const { Cesium, viewer } = await viewerRef.value.creatingPromise;
 
+      if (Cesium) {
+        // load 3D tileset using Cesium Ion Asset ID
+        const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2684829);
+        console.log("Moon Tileset Loaded");
+      }
+    } catch (error) {
+      console.error("Error loading tileset:", error);
+    }
+  }
+});
 
 </script>
 
