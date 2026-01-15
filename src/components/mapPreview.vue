@@ -1,9 +1,10 @@
 <script setup>
 <<<<<<< Updated upstream
 import {VcViewer, VcCompass, VcNavigation, VcTerrainProviderCesium, VcLayerImagery, VcImageryProviderOsm} from "vue-cesium";
-import {onMounted, ref, watch} from "vue";
+import {onMounted, ref, watch,watchEffect} from "vue";
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
+const cesiumToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
 const viewer = ref()
 const location = defineProps({
   lng: undefined,
@@ -71,12 +72,29 @@ catch(e) {
   console.log(e)
 }
 
+// MOON ASSET
+watchEffect(async () => { // wait for viewer to be ready before loading asset
+  if (viewerRef.value) {
+    try {
+      // init Cesium and viewer from the component promise
+      const { Cesium, viewer } = await viewerRef.value.creatingPromise;
+
+      if (Cesium) {
+        // load 3D tileset using Cesium Ion Asset ID
+        const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2684829);
+        console.log("Moon Tileset Loaded");
+      }
+    } catch (error) {
+      console.error("Error loading tileset:", error);
+    }
+  }
+});
 }
 
 </script>
 
 <template>
-  <vc-viewer access-token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4MzYzYjQ5Yi1hYzkzLTRhODctYWNkNi04ZWRmM2VhNmU2MzEiLCJpZCI6Mzc3NTg1LCJpYXQiOjE3NjgyMDg0NjN9.-_Sbjc8qnYU-KGxD2wBzXxvDPcGkasVe2vZCEY9KtmI"
+  <vc-viewer :access-token="cesiumToken"
              ref="viewerRef"
              @ready="onViewerReady">
       <vc-layer-imagery>

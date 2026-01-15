@@ -25,9 +25,8 @@ coverage
 *.sw?
 
 *.tsbuildinfo
-
 .eslintcache
-
+.env
 # Cypress
 /cypress/videos/
 /cypress/screenshots/
