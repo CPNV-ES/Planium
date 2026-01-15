@@ -33,17 +33,6 @@ const onViewerReady = (readyObj) => {
 
 const cesiumToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
 
-const props = defineProps({
-  lng: 46.82166054184684,
-  lat:  6.500465335539498
-})
-const camera = {
-  position: { lng: props.lng, lat: props.lat, height: 5000 },
-  heading: 0,
-      pitch: -45,
-      roll: 0
-}
-
 // MOON ASSET
 const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2684829);
 
