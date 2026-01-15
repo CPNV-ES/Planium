@@ -4,6 +4,8 @@ import {onMounted, ref} from "vue";
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
 
+const cesiumToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
+
 const props = defineProps({
   lng: 46.82166054184684,
   lat:  6.500465335539498
@@ -37,7 +39,7 @@ const onViewerReady = (readyObj) => {
 
 <template>
 
-  <vc-viewer access-token="YOUR_ACCESS_TOKEN"
+  <vc-viewer :access-token="cesiumToken"
              ref="viewerRef"
              @ready="onViewerReady">
       <vc-layer-imagery>
