@@ -10,7 +10,6 @@ onMounted(async ()=> {
   imageryProvider.value = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
       "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
   )
-  debugger
 })
 
 </script>

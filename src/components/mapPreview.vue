@@ -1,6 +1,6 @@
 <script setup>
 import {VcViewer, VcCompass, VcNavigation, VcTerrainProviderCesium, VcLayerImagery, VcImageryProviderOsm} from "vue-cesium";
-import {ref, watch} from "vue";
+import {onMounted, ref, watch,watchEffect} from "vue";
 import MapTerrain from "@/components/mapTerrain.vue";
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
@@ -13,7 +13,12 @@ const location = defineProps({
 })
 
 
+onMounted(() => {
+  viewerRef.value.creatingPromise.then((readyObj) => {
+    isViewerReady.value = true
+  })
 
+})
 
 watch(
     [() => location.lat, () => location.lng],
@@ -27,14 +32,23 @@ watch(
 )
 
 const onViewerReady = async ({ Cesium, viewer }) => {
-
   if (viewerRef.value) {
     try {
       const { Cesium, viewer } = await viewerRef.value.creatingPromise;
 
       if (Cesium) {
+        viewer.scene.primitives.removeAll();
         const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2684829);
-        console.log("Moon Tileset Loaded");
+        viewer.scene.primitives.add(tileset);
+
+        const modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(location);
+
+        const scale = 0.001;
+        tileset.modelMatrix = Cesium.Matrix4.multiplyByUniformScale(
+            modelMatrix,
+            scale,
+            new Cesium.Matrix4()
+        );
       }
       flyTo(viewer, Cesium , location.lat, location.lng)
       isViewerReady.value = true
@@ -56,7 +70,7 @@ try {
         100, //height
     ),
     orientation: {
-      heading: Cesium.Math.toRadians(0.0),
+      heading: Cesium.Math.toRadians(180.0), // South
       pitch: Cesium.Math.toRadians(10.0),
       roll: 0.0
     }
@@ -74,15 +88,15 @@ catch(e) {
   <vc-viewer :access-token="cesiumToken"
              ref="viewerRef"
              @ready="onViewerReady">
-<!--      <vc-layer-imagery>-->
-<!--        <vc-imagery-provider-osm>-->
-<!--        </vc-imagery-provider-osm>-->
-<!--      </vc-layer-imagery>-->
+      <vc-layer-imagery>
+        <vc-imagery-provider-osm>
+        </vc-imagery-provider-osm>
+      </vc-layer-imagery>
       <vc-imagery-provider-amap />
     <template v-if="isViewerReady">
       <vc-compass></vc-compass>
       <vc-navigation></vc-navigation>
-      <MapTerrain :cesium="cesium"/>
+<!--      <MapTerrain :cesium="cesium"/>-->
     </template>
   </vc-viewer>
 
