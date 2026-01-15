@@ -41,8 +41,15 @@ watchEffect(async () => { // wait for viewer to be ready before loading asset
       const { Cesium, viewer } = await viewerRef.value.creatingPromise;
 
       if (Cesium) {
+        // clear previous tilesets
+        viewer.scene.primitives.removeAll();
         // load 3D tileset using Cesium Ion Asset ID
         const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2684829);
+        // add 3D tileset to viewer
+        viewer.scene.primitives.add(tileset);
+        // zoom to tileset
+        viewer.zoomTo(tileset);
+
         console.log("Moon Tileset Loaded");
       }
     } catch (error) {
