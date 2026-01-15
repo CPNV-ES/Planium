@@ -50,4 +50,4 @@ def read_root():
 """
 Source Claude : How to change the listening port with Fastapi ?
 """
-uvicorn.run(app, port=8080)
+uvicorn.run(app, host="0.0.0.0", port=8080)
