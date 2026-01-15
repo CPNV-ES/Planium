@@ -1,43 +1,65 @@
 <script setup>
 import {VcViewer, VcCompass, VcNavigation, VcTerrainProviderCesium, VcLayerImagery, VcImageryProviderOsm} from "vue-cesium";
-import {onMounted, ref, watch,watchEffect} from "vue";
+import {ref, watch} from "vue";
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
 const cesiumToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
-const viewer = ref()
+const Vcviewer = ref()
+const cesium = ref()
 const location = defineProps({
   lng: undefined,
   lat:  undefined
 })
 
 
-onMounted(() => {
-  viewerRef.value.creatingPromise.then((readyObj) => {
-    isViewerReady.value = true
-  })
+// onMounted(() => {
+//   viewerRef.value.creatingPromise.then((readyObj) => {
+//     isViewerReady.value = true
+//   })
+//
+// })
 
-})
-
-const onViewerReady = (readyObj) => {
-  flyTo(readyObj, location.lat, location.lng)
-  viewer.value = readyObj
-}
+// const onViewerReady = (readyObj) => {
+//   flyTo(readyObj, location.lat, location.lng)
+//   viewer.value = readyObj
+// }
 
 watch(
     [() => location.lat, () => location.lng],
     ([newLat, newLng]) => {
-      if (viewer.value && newLat && newLng) {
-        flyTo(viewer.value, newLat, newLng)
+      if (Vcviewer.value && newLat != 0 && newLng != 0) {
+        flyTo(Vcviewer.value,cesium.value, newLat, newLng)
+      }else {
+        //Throw error
       }
     }
 )
 
+const onViewerReady = async ({ Cesium, viewer }) => {
 
-function flyTo(readyObj, lat, lng){
+  if (viewerRef.value) {
+    try {
+      const { Cesium, viewer } = await viewerRef.value.creatingPromise;
+
+      // if (Cesium) {
+      //   const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2684829);
+      //   console.log("Moon Tileset Loaded");
+      // }
+      flyTo(viewer, Cesium , location.lat, location.lng)
+      isViewerReady.value = true
+      Vcviewer.value = viewer
+      cesium.value = Cesium
+
+    } catch (error) {
+      console.error("Error loading tileset:", error);
+    }
+  }
+};
+
+function flyTo(viewer, cesium, lat, lng){
 try {
-
-  readyObj.viewer.camera.flyTo({
-    destination: readyObj.Cesium.Cartesian3.fromDegrees(
+  viewer.camera.flyTo({
+    destination: cesium.Cartesian3.fromDegrees(
         lng ?? 6.500465335539498, // longitude
         lat ?? 46.82166054184684, //latitude
         100, //height
@@ -53,23 +75,6 @@ catch(e) {
   console.log(e)
 }
 
-// MOON ASSET
-watchEffect(async () => { // wait for viewer to be ready before loading asset
-  if (viewerRef.value) {
-    try {
-      // init Cesium and viewer from the component promise
-      const { Cesium, viewer } = await viewerRef.value.creatingPromise;
-
-      if (Cesium) {
-        // load 3D tileset using Cesium Ion Asset ID
-        const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2684829);
-        console.log("Moon Tileset Loaded");
-      }
-    } catch (error) {
-      console.error("Error loading tileset:", error);
-    }
-  }
-});
 }
 
 </script>
