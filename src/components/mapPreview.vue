@@ -3,15 +3,31 @@ import {VcViewer, VcCompass, VcNavigation, VcTerrainProviderCesium, VcLayerImage
 import {onMounted, ref} from "vue";
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
+
+const props = defineProps({
+  lng: 46.82166054184684,
+  lat:  6.500465335539498
+})
+
 onMounted(() => {
   viewerRef.value.creatingPromise.then((readyObj) => {
     isViewerReady.value = true
   })
+
 })
 
 const onViewerReady = (readyObj) => {
   readyObj.viewer.camera.flyTo({
-    destination: readyObj.Cesium.Cartesian3.fromDegrees(6.500465335539498, 46.82166054184684, 10000)
+    destination: readyObj.Cesium.Cartesian3.fromDegrees(
+        6.500465335539498, // longitude
+        46.82166054184684, //latitude
+        100, //height
+    ),
+    orientation: {
+      heading: Cesium.Math.toRadians(10.0),
+      pitch: Cesium.Math.toRadians(10.0),
+      roll: 0.0
+    }
   })
 }
 
@@ -39,7 +55,7 @@ const tileset = viewer.scene.primitives.add(
 
   <vc-viewer :access-token="cesiumToken"
              ref="viewerRef"
-             @ready="onViewerReady" :camera="camera">
+             @ready="onViewerReady">
       <vc-layer-imagery>
         <vc-imagery-provider-osm>
 
