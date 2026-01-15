@@ -43,7 +43,7 @@ try {
         100, //height
     ),
     orientation: {
-      heading: Cesium.Math.toRadians(0.0),
+      heading: Cesium.Math.toRadians(180.0), // South
       pitch: Cesium.Math.toRadians(10.0),
       roll: 0.0
     }
@@ -53,7 +53,7 @@ catch(e) {
   console.log(e)
 }
 
-// MOON ASSET
+// MOON ASSET (insp. from https://cesium.com/platform/cesium-ion/content/cesium-moon/)
 watchEffect(async () => { // wait for viewer to be ready before loading asset
   if (viewerRef.value) {
     try {
@@ -61,9 +61,30 @@ watchEffect(async () => { // wait for viewer to be ready before loading asset
       const { Cesium, viewer } = await viewerRef.value.creatingPromise;
 
       if (Cesium) {
+        // clear previous tilesets
+        viewer.scene.primitives.removeAll(); //src: https://cesium.com/learn/ion-sdk/ref-doc/PrimitiveCollection.html
+
         // load 3D tileset using Cesium Ion Asset ID
         const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2684829);
-        console.log("Moon Tileset Loaded");
+
+        // add 3D tileset to viewer
+        viewer.scene.primitives.add(tileset);
+
+        // relocate to default location
+        const location = Cesium.Cartesian3.fromDegrees( //src: https://cesium.com/learn/ion-sdk/ref-doc/Cartesian3.html
+            6.583672,
+            46.393440,
+            10000 // 10km above ground
+        );
+        const modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(location); //src: https://cesium.com/learn/ion-sdk/ref-doc/Transforms.html
+
+        // scale down to 0.1% of size (3.475km wide)
+        const scale = 0.001;
+        tileset.modelMatrix = Cesium.Matrix4.multiplyByUniformScale( //src: https://cesium.com/learn/ion-sdk/ref-doc/Matrix4.html
+            modelMatrix,
+            scale,
+            new Cesium.Matrix4()
+        );
       }
     } catch (error) {
       console.error("Error loading tileset:", error);
