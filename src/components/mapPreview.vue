@@ -1,4 +1,5 @@
 <script setup>
+<<<<<<< Updated upstream
 import {VcViewer, VcCompass, VcNavigation, VcTerrainProviderCesium, VcLayerImagery, VcImageryProviderOsm} from "vue-cesium";
 import {onMounted, ref, watch} from "vue";
 const viewerRef = ref(null)
@@ -14,9 +15,27 @@ onMounted(() => {
   viewerRef.value.creatingPromise.then((readyObj) => {
     isViewerReady.value = true
   })
+=======
+import { 
+  VcViewer, VcCompass, VcNavigation, VcLayerImagery, VcImageryProviderOsm 
+} from "vue-cesium";
+import { ref, watchEffect } from "vue";
 
-})
+const viewerRef = ref(null);
 
+// Viewer's coordinates
+const lng = 6.500465;
+const lat = 46.821660;
+const height = 500; 
+>>>>>>> Stashed changes
+
+// Plane asset
+watchEffect(async () => {
+  if (viewerRef.value) {
+    try {
+      const { Cesium, viewer } = await viewerRef.value.creatingPromise;
+
+<<<<<<< Updated upstream
 const onViewerReady = (readyObj) => {
   flyTo(readyObj, location.lat, location.lng)
   viewer.value = readyObj
@@ -70,7 +89,41 @@ catch(e) {
       <vc-navigation></vc-navigation>
       <vc-terrain-provider-cesium></vc-terrain-provider-cesium>
     </template>
+=======
+      if (Cesium) {
+        // Load the plane asset from Cesium Ion
+        const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(4350908);
+        
+        // Positioning : Create the matrice to place the plane at the desired coordinates
+        const position = await Cesium.Cartesian3.fromDegrees(lng, lat, height);
+        tileset.modelMatrix = await Cesium.Transforms.eastNorthUpToFixedFrame(position);
+
+        // Add the tileset to the scene
+        viewer.scene.primitives.add(tileset);
+
+        // Zoom at the plane
+        viewer.zoomTo(tileset);
+
+        console.log("Avion chargé et positionné");
+      }
+    } catch (error) {
+      console.error("Erreur chargement avion:", error);
+    }
+  }
+});
+</script>
+
+<template>
+  <vc-viewer 
+    access-token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmNjIwYjM3Ni01MzVjLTQ5YTItOTllOS1hYWRjMzAyZTY5NjkiLCJpZCI6Mzc4OTExLCJpYXQiOjE3Njg0NjM5NjJ9.WpOtp84vlHUKTGYBlFiH7AOoICb43nlmQL4ZAhPSunM"
+    ref="viewerRef">
+    
+    <vc-layer-imagery>
+      <vc-imagery-provider-osm />
+    </vc-layer-imagery>
+
+    <vc-compass />
+    <vc-navigation />
+>>>>>>> Stashed changes
   </vc-viewer>
-
 </template>
-
