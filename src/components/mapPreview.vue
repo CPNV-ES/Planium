@@ -24,7 +24,7 @@ const onViewerReady = (readyObj) => {
         100, //height
     ),
     orientation: {
-      heading: Cesium.Math.toRadians(10.0),
+      heading: Cesium.Math.toRadians(0.0),
       pitch: Cesium.Math.toRadians(10.0),
       roll: 0.0
     }
