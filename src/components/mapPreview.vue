@@ -1,6 +1,7 @@
 <script setup>
 import {VcViewer, VcCompass, VcNavigation, VcTerrainProviderCesium, VcLayerImagery, VcImageryProviderOsm} from "vue-cesium";
 import {ref, watch} from "vue";
+import MapTerrain from "@/components/mapTerrain.vue";
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
 const cesiumToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
@@ -12,17 +13,7 @@ const location = defineProps({
 })
 
 
-// onMounted(() => {
-//   viewerRef.value.creatingPromise.then((readyObj) => {
-//     isViewerReady.value = true
-//   })
-//
-// })
 
-// const onViewerReady = (readyObj) => {
-//   flyTo(readyObj, location.lat, location.lng)
-//   viewer.value = readyObj
-// }
 
 watch(
     [() => location.lat, () => location.lng],
@@ -41,10 +32,10 @@ const onViewerReady = async ({ Cesium, viewer }) => {
     try {
       const { Cesium, viewer } = await viewerRef.value.creatingPromise;
 
-      // if (Cesium) {
-      //   const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2684829);
-      //   console.log("Moon Tileset Loaded");
-      // }
+      if (Cesium) {
+        const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2684829);
+        console.log("Moon Tileset Loaded");
+      }
       flyTo(viewer, Cesium , location.lat, location.lng)
       isViewerReady.value = true
       Vcviewer.value = viewer
@@ -83,15 +74,15 @@ catch(e) {
   <vc-viewer :access-token="cesiumToken"
              ref="viewerRef"
              @ready="onViewerReady">
-      <vc-layer-imagery>
-        <vc-imagery-provider-osm>
-        </vc-imagery-provider-osm>
-      </vc-layer-imagery>
+<!--      <vc-layer-imagery>-->
+<!--        <vc-imagery-provider-osm>-->
+<!--        </vc-imagery-provider-osm>-->
+<!--      </vc-layer-imagery>-->
       <vc-imagery-provider-amap />
     <template v-if="isViewerReady">
       <vc-compass></vc-compass>
       <vc-navigation></vc-navigation>
-      <vc-terrain-provider-cesium></vc-terrain-provider-cesium>
+      <MapTerrain :cesium="cesium"/>
     </template>
   </vc-viewer>
 
