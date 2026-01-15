@@ -1,15 +1,15 @@
 <script setup>
 import {VcViewer, VcCompass, VcNavigation, VcTerrainProviderCesium, VcLayerImagery, VcImageryProviderOsm} from "vue-cesium";
-import {onMounted, ref, watchEffect} from "vue";
+import {onMounted, ref, watch,watchEffect} from "vue";
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
-
 const cesiumToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
-
-const props = defineProps({
-  lng: 46.82166054184684,
-  lat:  6.500465335539498
+const viewer = ref()
+const location = defineProps({
+  lng: undefined,
+  lat:  undefined
 })
+
 
 onMounted(() => {
   viewerRef.value.creatingPromise.then((readyObj) => {
@@ -19,18 +19,38 @@ onMounted(() => {
 })
 
 const onViewerReady = (readyObj) => {
+  flyTo(readyObj, location.lat, location.lng)
+  viewer.value = readyObj
+}
+
+watch(
+    [() => location.lat, () => location.lng],
+    ([newLat, newLng]) => {
+      if (viewer.value && newLat && newLng) {
+        flyTo(viewer.value, newLat, newLng)
+      }
+    }
+)
+
+
+function flyTo(readyObj, lat, lng){
+try {
+
   readyObj.viewer.camera.flyTo({
     destination: readyObj.Cesium.Cartesian3.fromDegrees(
-        6.500465335539498, // longitude
-        46.82166054184684, //latitude
+        lng ?? 6.500465335539498, // longitude
+        lat ?? 46.82166054184684, //latitude
         100, //height
     ),
     orientation: {
-      heading: Cesium.Math.toRadians(10.0),
+      heading: Cesium.Math.toRadians(0.0),
       pitch: Cesium.Math.toRadians(10.0),
       roll: 0.0
     }
   })
+}
+catch(e) {
+  console.log(e)
 }
 
 // MOON ASSET (insp. from https://cesium.com/platform/cesium-ion/content/cesium-moon/)
@@ -85,17 +105,16 @@ watchEffect(async () => { // wait for viewer to be ready before loading asset
     }
   }
 });
+}
 
 </script>
 
 <template>
-
   <vc-viewer :access-token="cesiumToken"
              ref="viewerRef"
              @ready="onViewerReady">
       <vc-layer-imagery>
         <vc-imagery-provider-osm>
-
         </vc-imagery-provider-osm>
       </vc-layer-imagery>
       <vc-imagery-provider-amap />
