@@ -27,6 +27,12 @@ const camera = {
       pitch: -45,
       roll: 0
 }
+
+// MOON ASSET
+const tileset = viewer.scene.primitives.add(
+    await Cesium.Cesium3DTileset.fromIonAssetId(2684829),
+);
+
 </script>
 
 <template>
