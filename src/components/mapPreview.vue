@@ -1,8 +1,19 @@
 <script setup>
 import {VcViewer, VcCompass, VcNavigation, VcTerrainProviderCesium, VcLayerImagery, VcImageryProviderOsm} from "vue-cesium";
-import {useMapController} from "@/controller/mapPreviewController.js";
+import {onMounted, ref} from "vue";
+const viewerRef = ref(null)
+const isViewerReady = ref(false)
+onMounted(() => {
+  viewerRef.value.creatingPromise.then((readyObj) => {
+    isViewerReady.value = true
+  })
+})
 
-const { isViewerReady, viewerRef, onViewerReady } = useMapController()
+const onViewerReady = (readyObj) => {
+  readyObj.viewer.camera.flyTo({
+    destination: readyObj.Cesium.Cartesian3.fromDegrees(6.500465335539498, 46.82166054184684, 10000)
+  })
+}
 const props = defineProps({
   lng: 46.82166054184684,
   lat:  6.500465335539498
