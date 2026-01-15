@@ -33,6 +33,8 @@ const onViewerReady = (readyObj) => {
   })
 }
 
+// MOON ASSET
+const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2684829);
 
 
 </script>
