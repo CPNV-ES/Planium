@@ -21,7 +21,7 @@ const location = defineProps({
 watch(
     [() => location.lat, () => location.lng],
     ([newLat, newLng]) => {
-      if (Vcviewer.value && newLat != 0 && newLng != 0) {
+      if (Vcviewer.value && newLat !== 0 && newLng !== 0) {
         flyTo(Vcviewer.value.camera,cesium.value, newLat, newLng)
       }else {
         //Throw error
