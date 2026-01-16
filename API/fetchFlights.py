@@ -18,10 +18,10 @@ def get_flights(user_lat, user_long):
     Returns:
         List of dictionaries containing flight data
 
+    Example:
         [{'origin_country': 'Portugal', 'lat': 46.8, 'long': 7.0111, 'alt': 10.51, 'velocity': 196.84,
         'heading': 231.15, 'vertical_rate': 2.28},...]
 
-    Example:
         "origin_country": country of origin of the plane
         "lat": plane latitude (°) -90 to 90
         "long": plane longitude (°) -180 to 180
