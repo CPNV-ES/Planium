@@ -9,6 +9,5 @@ let moonLocation = await getTilesetCartesian()
 </script>
 
 <template>
-<!--  <Google3dTiles :assetId="2275207"/>-->
   <Tileset  :tilesetCartesian="moonLocation" :assetId="2684829"/>
 </template>
