@@ -14,7 +14,12 @@ const cesiumToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
       })
 
 const onReady = ({ cesiumObject: tileset }) => {
-  const cartographic = Cesium.Cartographic.fromCartesian(props.tilesetCartesian) // put real moon place if possible
+  const tilesetPosition = new Cesium.Cartesian3(
+      props.tilesetCartesian.x,
+      props.tilesetCartesian.y,
+      props.tilesetCartesian.z
+  )
+  const cartographic = Cesium.Cartographic.fromCartesian(tilesetPosition) // put real moon place if possible
   const surface = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, cartographic.height)
   const offset = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, 1000)
   const translation = Cesium.Cartesian3.subtract(offset, surface, new Cesium.Cartesian3())
