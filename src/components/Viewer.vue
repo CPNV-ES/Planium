@@ -24,7 +24,14 @@ watch(
       if (Vcviewer.value && newLat !== 0 && newLng !== 0) {
         flyTo(Vcviewer.value.camera,cesium.value, newLat, newLng)
       }else {
-        //Throw error
+        console.error(
+            "Unable to update camera position: viewer is not ready or location is invalid.",
+            {
+              viewerReady: !!Vcviewer.value,
+              lat: newLat,
+              lng: newLng
+            }
+        );
       }
     }
 )
