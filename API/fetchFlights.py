@@ -11,8 +11,12 @@ def get_flights(user_lat, user_long):
     """
     Fetch flight data from OpenSky Network API for Switzerland region
 
+    Args:
+        user_lat: User latitude in degrees
+        user_long: User longitude in degrees
+
     Returns:
-        Dict containing list of flights with their data
+        List of dictionaries containing flight data
     """
     url = "https://opensky-network.org/api/states/all"
 
@@ -48,11 +52,12 @@ def get_flights(user_lat, user_long):
         # creating a dictionary that stores only useful data
         flight = {
             "origin_country": state[2],
-            "lat": state[5],
-            "long": state[6],
+            "lat": state[6],
+            "long": state[5],
             "alt": state[7]/1000 if state[7] else state[7],
             "velocity": state[9],
-            "heading": state[10]
+            "heading": state[10],
+            "vertical_rate": state[11]
         }
         # add the flight to the list of aircraft
         flights.append(flight)
