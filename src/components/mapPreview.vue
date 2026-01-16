@@ -1,7 +1,11 @@
 <script setup>
-import {VcViewer, VcCompass, VcNavigation, VcTerrainProviderCesium, VcLayerImagery, VcImageryProviderOsm} from "vue-cesium";
-import {onMounted, ref, watch,watchEffect} from "vue";
-import MapTerrain from "@/components/mapTerrain.vue";
+import {VcViewer} from "vue-cesium";
+import {ref, watch} from "vue";
+import {prepareScene} from "@/utils/scene.js";
+import Imagery from "@/components/imagery/Imagery.vue";
+import Tilesets from "@/components/primitive/Tilesets.vue";
+import {flyTo} from "@/utils/camera.js";
+import Navigation from "@/components/navigation/Navigation.vue";
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
 const cesiumToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
@@ -13,18 +17,12 @@ const location = defineProps({
 })
 
 
-onMounted(() => {
-  viewerRef.value.creatingPromise.then((readyObj) => {
-    isViewerReady.value = true
-  })
-
-})
 
 watch(
     [() => location.lat, () => location.lng],
     ([newLat, newLng]) => {
       if (Vcviewer.value && newLat != 0 && newLng != 0) {
-        flyTo(Vcviewer.value,cesium.value, newLat, newLng)
+        flyTo(Vcviewer.value.camera,cesium.value, newLat, newLng)
       }else {
         //Throw error
       }
@@ -35,22 +33,17 @@ const onViewerReady = async ({ Cesium, viewer }) => {
   if (viewerRef.value) {
     try {
       const { Cesium, viewer } = await viewerRef.value.creatingPromise;
-
       if (Cesium) {
-        viewer.scene.primitives.removeAll();
-        const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2684829);
-        viewer.scene.primitives.add(tileset);
-
-        const modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(location);
-
-        const scale = 0.001;
-        tileset.modelMatrix = Cesium.Matrix4.multiplyByUniformScale(
-            modelMatrix,
-            scale,
-            new Cesium.Matrix4()
-        );
+        viewer.scene.requestRenderMode = true; // Ne rendu que si nécessaire
+        viewer.scene.maximumRenderTimeChange = Infinity;
+        viewer.scene.globe.maximumScreenSpaceError = 24; // AUGMENTE CETTE VALEUR (16 à 32) pour réduire les requêtes
+        viewer.scene.globe.tileCacheSize = 1000;
+        viewer.scene.globe.preloadAncestors = false;
+        await prepareScene(viewer.scene)
+        // removeMoving(viewer.scene)
       }
-      flyTo(viewer, Cesium , location.lat, location.lng)
+
+      flyTo(viewer.camera, Cesium , location.lat, location.lng)
       isViewerReady.value = true
       Vcviewer.value = viewer
       cesium.value = Cesium
@@ -61,42 +54,30 @@ const onViewerReady = async ({ Cesium, viewer }) => {
   }
 };
 
-function flyTo(viewer, cesium, lat, lng){
-try {
-  viewer.camera.flyTo({
-    destination: cesium.Cartesian3.fromDegrees(
-        lng ?? 6.500465335539498, // longitude
-        lat ?? 46.82166054184684, //latitude
-        100, //height
-    ),
-    orientation: {
-      heading: Cesium.Math.toRadians(180.0), // South
-      pitch: Cesium.Math.toRadians(10.0),
-      roll: 0.0
-    }
-  })
-}
-catch(e) {
-  console.log(e)
-}
-
-}
 
 </script>
 
 <template>
-  <vc-viewer :access-token="cesiumToken"
+  <vc-viewer
+      :showCredit="false"
+      :enableMouseEvent="false"
+      :scene3DOnly="true"
+      :access-token="cesiumToken"
              ref="viewerRef"
              @ready="onViewerReady">
-      <vc-layer-imagery>
-        <vc-imagery-provider-osm>
-        </vc-imagery-provider-osm>
-      </vc-layer-imagery>
-      <vc-imagery-provider-amap />
+
     <template v-if="isViewerReady">
-      <vc-compass></vc-compass>
-      <vc-navigation></vc-navigation>
-<!--      <MapTerrain :cesium="cesium"/>-->
+      <Imagery/>
+      <Tilesets/>
+      <Navigation/>
+      <!--      Suspense wait for the different async call inside each component-->
+      <Suspense>
+        <Tilesets/>
+        <template #fallback>
+          <div>Loading...</div>
+        </template>
+      </Suspense>
+
     </template>
   </vc-viewer>
 
