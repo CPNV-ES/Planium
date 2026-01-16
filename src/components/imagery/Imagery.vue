@@ -8,7 +8,3 @@ import IonImagery from "@/components/imagery/IonImagery.vue";
 <!--    <IonImagery assetId="2"></IonImagery>-->
   </vc-layer-imagery>
 </template>
-
-<style scoped>
-
-</style>
