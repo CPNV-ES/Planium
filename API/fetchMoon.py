@@ -26,9 +26,3 @@ def get_moon_data():
 
     response = requests.get(url, params=API_fetch_params)
     data = response.json()
-
-    if 'result' in data:
-        # Save the raw text to a json file, must then read "result" key to get data
-        with open('moon_data/moon_data.json', 'w') as f:
-            json.dump(data, f, indent=4)
-        print("Success! Saved NASA data to moon_data.json")
