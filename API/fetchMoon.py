@@ -1,6 +1,6 @@
 import requests
 
-def get_moon_data(): # src: https://ssd-api.jpl.nasa.gov/doc/horizons.html
+def get_moon_data(start_time, stop_time, step): # src: https://ssd-api.jpl.nasa.gov/doc/horizons.html
     """
     Fetch Moon's RA, DEC and phase from Horizon API
 
@@ -16,9 +16,9 @@ def get_moon_data(): # src: https://ssd-api.jpl.nasa.gov/doc/horizons.html
             'MAKE_EPHEM': 'YES',
             'EPHEM_TYPE': 'OBSERVER',
             'CENTER': "'500@399'",      # Earth's center coordinates
-            'START_TIME': "'2026-01-15'",   # From
-            'STOP_TIME': "'2026-01-20'",    # To
-            'STEP_SIZE': "'1h'",        # Step
+            'START_TIME': f'{start_time}',   # From 'YYYY-MM-DD'
+            'STOP_TIME': f'{stop_time}',    # To 'YYYY-MM-DD'
+            'STEP_SIZE': f'{step}',        # Step (ex.'1h')
             'QUANTITIES': "'1,9'",    # 1 = RA/DEC, Quantity 9 = Brightness/Phase
         }
 
