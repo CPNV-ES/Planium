@@ -1,7 +1,7 @@
 <script setup>
 import {VcViewer} from "vue-cesium";
 import {ref, watch} from "vue";
-import {prepareScene} from "@/utils/scene.js";
+import {prepareScene, removeMoving} from "@/utils/scene.js";
 import Imagery from "@/components/imagery/Imagery.vue";
 import Tilesets from "@/components/primitive/Tilesets.vue";
 import {flyTo} from "@/utils/camera.js";
@@ -40,7 +40,7 @@ const onViewerReady = async ({ Cesium, viewer }) => {
         viewer.scene.globe.tileCacheSize = 1000;
         viewer.scene.globe.preloadAncestors = false;
         await prepareScene(viewer.scene)
-        // removeMoving(viewer.scene)
+        removeMoving(viewer.scene)
       }
 
       flyTo(viewer.camera, Cesium , location.lat, location.lng)
