@@ -14,3 +14,8 @@ export function addTilesetToScene(scene, tileset){
     }
 
 }
+
+//Prevent the user to move in the scene
+export function removeMoving(scene){
+    scene.screenSpaceCameraController.enableRotate = false;
+}
