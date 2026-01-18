@@ -1,4 +1,11 @@
 export async function prepareScene(scene){
+    //------------Uncomment if performance is low---------------------
+    // scene.requestRenderMode = true; // Ne rendu que si nécessaire
+    // scene.maximumRenderTimeChange = Infinity;
+    // scene.globe.maximumScreenSpaceError = 24; // AUGMENTE CETTE VALEUR (16 à 32) pour réduire les requêtes
+    // scene.globe.tileCacheSize = 1000;
+    // scene.globe.preloadAncestors = false;
+    // scene.globe.loadingDescendantLimit = 20;
     scene.primitives.removeAll();
     scene.contextOptions = {
         allowTextureFilterAnisotropic: false,

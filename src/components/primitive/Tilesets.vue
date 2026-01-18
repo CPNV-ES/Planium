@@ -1,6 +1,4 @@
 <script async setup>
-
-import Google3dTiles from "@/components/primitive/Google3dTiles.vue";
 import Tileset from "@/components/primitive/Tileset.vue";
 import {getTilesetCartesian} from "@/utils/tileset.js";
 
