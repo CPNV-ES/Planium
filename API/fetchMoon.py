@@ -10,8 +10,10 @@ def get_moon_data(start_time, stop_time, step): # src: https://ssd-api.jpl.nasa.
     """
     Fetch Moon's RA, DEC and phase from Horizon API
 
-    Returns:
-        Dict containing list of moon's data at specific times
+    :param start_time: min time value for moon fetching (start)
+    :param stop_time: max time value for moon fetching (end)
+    :param step: time step for moon fetching (hours)
+    :return: dict containing list of moon's data at specific times
     """
     url = 'https://ssd.jpl.nasa.gov/api/horizons.api'
 
