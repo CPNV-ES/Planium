@@ -1,4 +1,10 @@
+import math
+
+import numpy as np
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
+
 
 def get_moon_data(start_time, stop_time, step): # src: https://ssd-api.jpl.nasa.gov/doc/horizons.html
     """
@@ -22,10 +28,37 @@ def get_moon_data(start_time, stop_time, step): # src: https://ssd-api.jpl.nasa.
             'QUANTITIES': "'1,9'",    # 1 = RA/DEC, Quantity 9 = Brightness/Phase
         }
 
-    response = requests.get(url, params=API_fetch_params)
-    data = response.json()
+    # setup retries to handle SSLError or connection drops
+    # src: https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html
+    # src: https://requests.readthedocs.io/en/latest/user/advanced/
+    session = requests.Session()
+    retries = Retry(
+        total=5,    # if a request fails, try 5 more times
+        backoff_factor=1, # wait between tries to prevent overloading the system
+        status_forcelist=[502, 503, 504] # only retry if server returns 502, 503, 504 error status (bad gateway/service unavailable)
+    )
+    # apply for any url 'http://'
+    session.mount('http://', HTTPAdapter(max_retries=retries))
 
+    try:
+        response = requests.get(
+            url,
+            params=API_fetch_params, # pass api's custom params
+            timeout=15 # trigger retry if server doesn't respond in 15s
+        )
+        response.raise_for_status() # raise Exception for any error
+        data = response.json() # parse json response
+    except Exception as e:
+        print(e)
+        return []
+
+    # check if 'result' key exists
     if not data.get('result'):
+        return []
+
+    result = data.get('result', '')
+    # check if data keyword 'SOE' was returned
+    if '$$SOE' not in result:
         return []
 
     lines = data.get('result', '').split('\n') # Split text in lines
@@ -83,7 +116,7 @@ def get_moon_data(start_time, stop_time, step): # src: https://ssd-api.jpl.nasa.
                     # structure return data
                     entry = {
                         'datetime': f"{values[0]} {values[1]}", # 'YYYY-MM-DD HH:SS'
-                        'ra': round(ra_decimal, 6),   # 6 Decimal Right Ascension (degrees)
+                        'ra': round(ra_decimal, 6),   # 6 Decimal Right Ascension (hours)
                         'dec': round(dec_decimal,6),  # 6 Decimal Declination (degrees)
                         'phase': float(values[-1]) # Phase decimal percentage (0.00 - 100.00)
                     }
