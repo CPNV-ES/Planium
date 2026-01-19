@@ -10,22 +10,17 @@ const cesiumToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
       x: Number,
       y: Number,
       z: Number
-    }
+    },
+   height: Number
       })
 
 const onReady = ({ cesiumObject: tileset }) => {
-  const now = Cesium.JulianDate.now();
-  const moonPosInertial = Cesium.Simon1994PlanetaryPositions.computeMoonPositionInEarthInertialFrame(now);
-  const icrfToFixed = Cesium.Transforms.computeIcrfToFixedMatrix(now);
-  const moonPositionReal = new Cesium.Cartesian3();
-  if (Cesium.defined(icrfToFixed)) {
-    Cesium.Matrix3.multiplyByVector(icrfToFixed, moonPosInertial, moonPositionReal);
-  }
-  const cartographic = Cesium.Cartographic.fromCartesian(moonPositionReal);
+   debugger
+  const cartographic = Cesium.Cartographic.fromCartesian(props.tilesetCartesian);
   const finalPosition = Cesium.Cartesian3.fromRadians(
       cartographic.longitude,
       cartographic.latitude,
-      150000
+      props.height
   );
   const translationMatrix = Cesium.Matrix4.fromTranslation(finalPosition)
 

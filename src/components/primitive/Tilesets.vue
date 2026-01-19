@@ -1,11 +1,11 @@
 <script async setup>
 import Tileset from "@/components/primitive/Tileset.vue";
-import {getTilesetCartesian} from "@/utils/tileset.js";
+import {getMoonLocation} from "@/utils/tileset.js";
 
-let moonLocation = await getTilesetCartesian()
+let moonLocation =  getMoonLocation()
 
 </script>
 
 <template>
-  <Tileset  :tilesetCartesian="moonLocation" :assetId="2684829"/>
+  <Tileset  :tilesetCartesian="moonLocation" :height="150000" :assetId="2684829"/>
 </template>
