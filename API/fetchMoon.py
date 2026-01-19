@@ -125,3 +125,53 @@ def get_moon_data(start_time, stop_time, step): # src: https://ssd-api.jpl.nasa.
                     print(f"Error: {e}")
                     continue
     return moon_data
+
+def get_cesium_moon_coordinates(moon_data, altitude_m):
+    """
+    Converts RA/Dec to X, Y, Z coordinates
+    :param moon_data: datetime, ra, dec, phase
+    :param altitude_m: altitude above Earth's surface in meters
+    :return: dict with timestamp, X, Y, Z coordinates and moon phase
+    """
+    # Earth radius in meters
+    earth_radius = 6371000
+    # total distance from Earth's center to Moon
+    r = earth_radius + altitude_m
+
+    cesium_coordinates = []
+
+    for entry in moon_data:
+        # convert moon coordinates to radians src: src: https://skyandtelescope.org/astronomy-resources/right-ascension-declination-celestial-coordinates/
+        # RA [hours] to degrees
+        ra_deg = entry['ra'] * 15
+        # RA [degrees] to radians
+        ra_rad = math.radians(ra_deg)
+        # Dec [degrees] to radians
+        dec_rad = math.radians(entry['dec'])
+
+        # convert spherical to cartesian src: https://mathworld.wolfram.com/SphericalCoordinates.html
+        # x = r * cos(dec) * cos(ra)
+        # y = r * cos(dec) * sin(ra)
+        # z = r * sin(dec)
+        x = r * math.cos(dec_rad) * math.cos(ra_rad)
+        y = r * math.cos(dec_rad) * math.sin(ra_rad)
+        z = r * math.sin(dec_rad)
+
+        cesium_coordinates.append({
+            'timestamp': entry['datetime'],
+            'x': round(x, 6),
+            'y': round(y, 6),
+            'z': round(z, 6),
+            'phase': entry['phase']
+        })
+
+    return cesium_coordinates
+
+"""
+# test
+raw = get_moon_data('2026-01-15', '2026-01-20', '1h')
+if raw:
+    cesium_coordinates = get_cesium_moon_coordinates(raw, 10000)
+    print(f"Sample Coord: {cesium_coordinates[0]}")
+    print(f"Total points: {len(cesium_coordinates)}")
+"""
