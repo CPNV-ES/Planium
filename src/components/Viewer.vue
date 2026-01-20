@@ -3,11 +3,9 @@ import {VcViewer} from "vue-cesium";
 import {ref, watch} from "vue";
 import {loadPlanes, prepareScene, removeMoving} from "@/utils/scene.js";
 import Imagery from "@/components/imagery/Imagery.vue";
-import Tilesets from "@/components/primitive/Tilesets.vue";
 import {flyTo} from "@/utils/camera.js";
 import Navigation from "@/components/navigation/Navigation.vue";
 import Terrain from "@/components/terrain/Terrain.vue";
-import Dynamic from "@/components/Overlay/Dynamic.vue";
 
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
