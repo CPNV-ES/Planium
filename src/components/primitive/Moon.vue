@@ -1,6 +1,5 @@
 <script setup>
 import {VcPrimitiveTileset} from "vue-cesium";
-import {Cartesian3} from "cesium";
 
 const cesiumToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
 
@@ -35,7 +34,7 @@ const onReady = ({ cesiumObject: tileset }) => {
 <template>
   <vc-primitive-tileset
       ref="primitive"
-      :assetId="assetId"
+      :assetId="2684829"
       :accessToken="cesiumToken"
       @ready="onReady"
   ></vc-primitive-tileset>
