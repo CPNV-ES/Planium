@@ -1,5 +1,5 @@
 <script setup>
-import MapPreview from "@/components/mapPreview.vue";
+import Viewer from "@/components/Viewer.vue";
 import {ref} from "vue";
 // Check later to use the given inputs for location
 const lat = ref(0)
@@ -31,7 +31,7 @@ function send(){
         </fieldset>
       </div>
     <div id="cesiumContainer" class="flex w-[70%]">
-       <mapPreview v-bind="location" />
+       <Viewer v-bind="location" />
     </div>
   </div>
 </template>
