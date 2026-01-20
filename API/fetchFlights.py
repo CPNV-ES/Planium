@@ -64,6 +64,7 @@ def get_flights(user_lat, user_long):
     for state in data["states"]:
         # creating a dictionary that stores only useful data
         flight = {
+            "id": state[1],
             "origin_country": state[2],
             "lat": state[6],
             "long": state[5],
