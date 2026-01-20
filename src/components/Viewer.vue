@@ -1,12 +1,13 @@
 <script setup>
 import {VcViewer} from "vue-cesium";
 import {ref, watch} from "vue";
-import {prepareScene, removeMoving} from "@/utils/scene.js";
+import {loadPlanes, prepareScene, removeMoving} from "@/utils/scene.js";
 import Imagery from "@/components/imagery/Imagery.vue";
 import Tilesets from "@/components/primitive/Tilesets.vue";
 import {flyTo} from "@/utils/camera.js";
 import Navigation from "@/components/navigation/Navigation.vue";
 import Terrain from "@/components/terrain/Terrain.vue";
+import Dynamic from "@/components/Overlay/Dynamic.vue";
 
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
@@ -43,13 +44,14 @@ const onViewerReady = async ({Cesium, viewer}) => {
     try {
       if (Cesium) {
         await prepareScene(viewer.scene)
-        // removeMoving(viewer.scene)
+        removeMoving(viewer.scene)
       }
 
       flyTo(viewer.camera, Cesium, location.lat, location.lng)
       isViewerReady.value = true
       Vcviewer.value = viewer
       cesium.value = Cesium
+     await loadPlanes(viewer)
 
     } catch (error) {
       console.error("Error loading tileset:", error);
@@ -70,11 +72,16 @@ const onViewerReady = async ({Cesium, viewer}) => {
       @ready="onViewerReady">
 
     <template v-if="isViewerReady">
-      <Imagery/>
-      <Terrain/>
-      <Tilesets/>
-      <Navigation/>
-      <Tilesets/>
+          <Imagery/>
+          <Terrain/>
+          <Navigation/>
+<!--      <Dynamic/>-->
+<!--        <Suspense>-->
+<!--          <Tilesets/>-->
+<!--          <template #fallback>-->
+<!--            Loading...-->
+<!--          </template>-->
+<!--        </Suspense>-->
 
     </template>
   </vc-viewer>
