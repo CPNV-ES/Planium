@@ -3,7 +3,7 @@ import {VcPrimitiveTileset} from "vue-cesium";
 defineProps({
   assetId: Number
 })
-debugger
+
 </script>
 
 <template>
