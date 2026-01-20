@@ -6,6 +6,7 @@ import Imagery from "@/components/imagery/Imagery.vue";
 import {flyTo} from "@/utils/camera.js";
 import Navigation from "@/components/navigation/Navigation.vue";
 import Terrain from "@/components/terrain/Terrain.vue";
+import Moon from "@/components/primitive/Moon.vue";
 
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
@@ -42,7 +43,7 @@ const onViewerReady = async ({Cesium, viewer}) => {
     try {
       if (Cesium) {
         await prepareScene(viewer.scene)
-        removeMoving(viewer.scene)
+        // removeMoving(viewer.scene)
       }
 
       flyTo(viewer.camera, Cesium, location.lat, location.lng)
@@ -73,14 +74,7 @@ const onViewerReady = async ({Cesium, viewer}) => {
           <Imagery/>
           <Terrain/>
           <Navigation/>
-<!--      <Dynamic/>-->
-<!--        <Suspense>-->
-<!--          <Tilesets/>-->
-<!--          <template #fallback>-->
-<!--            Loading...-->
-<!--          </template>-->
-<!--        </Suspense>-->
-
+      <Moon/>
     </template>
   </vc-viewer>
 
