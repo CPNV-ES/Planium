@@ -7,10 +7,15 @@ Desc : call the API from the frontend
 "use strict";
 
 // Source : https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
-export async function getData(url, lat = null, long = null) {
+export async function getData(url, params = {}) {
+    /*
+    Example :
+        getData("http://localhost:8080/flights", { lat: 48.85, long: 2.35 });
+    */
     try {
-        // Include the parameters in the url
-        const fullURL = `${url}?lat=${lat}&long=${long}`;
+        // Creates the parameter string from the params object
+        const queryString = new URLSearchParams(params).toString();
+        const fullURL = queryString ? `${url}?${queryString}` : url;
 
         // Fetch data from the API
         const response = await fetch(fullURL);
