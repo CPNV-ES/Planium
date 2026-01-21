@@ -8,6 +8,7 @@ import Navigation from "@/components/navigation/Navigation.vue";
 import Terrain from "@/components/terrain/Terrain.vue";
 import Moon from "@/components/primitive/Moon.vue";
 import MoonPhase from "@/components/MoonPhase.vue";
+import CameraController from './CameraController.vue'
 
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
@@ -80,6 +81,6 @@ const onViewerReady = async ({Cesium, viewer}) => {
     </template>
     <MoonPhase/>
   </vc-viewer>
-
+  <CameraController v-if="isViewerReady" :viewer="Vcviewer" />
 </template>
 
