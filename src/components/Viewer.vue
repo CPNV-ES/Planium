@@ -11,7 +11,7 @@ import Moon from "@/components/primitive/Moon.vue";
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
 const cesiumToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
-const Vcviewer = ref(null)
+const mapViewer = ref(null)
 const cesium = ref(null)
 const location = defineProps({
   lng: undefined,
@@ -22,13 +22,13 @@ const location = defineProps({
 watch(
     [() => location.lat, () => location.lng],
     ([newLat, newLng]) => {
-      if (Vcviewer.value && newLat !== 0 && newLng !== 0) {
-        flyTo(Vcviewer.value.camera, cesium.value, newLat, newLng)
+      if (mapViewer.value && newLat !== 0 && newLng !== 0) {
+        flyTo(mapViewer.value.camera, cesium.value, newLat, newLng)
       } else {
         console.error(
             "Unable to update camera position: viewer is not ready or location is invalid.",
             {
-              viewerReady: !!Vcviewer.value,
+              viewerReady: !!mapViewer.value,
               lat: newLat,
               lng: newLng
             }
@@ -48,10 +48,10 @@ const onViewerReady = async ({Cesium, viewer}) => {
       }
 
       flyTo(viewer.camera, Cesium, location.lat, location.lng)
-      isViewerReady.value = true
-      Vcviewer.value = viewer
+      mapViewer.value = viewer
       cesium.value = Cesium
       await loadPlanes(viewer)
+      isViewerReady.value = true
       setInterval(async () => {
        await movePlanes(viewer)
       }, 30000)
