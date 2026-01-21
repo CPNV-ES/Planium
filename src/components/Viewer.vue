@@ -7,6 +7,7 @@ import {flyTo} from "@/utils/camera.js";
 import Navigation from "@/components/navigation/Navigation.vue";
 import Terrain from "@/components/terrain/Terrain.vue";
 import Moon from "@/components/primitive/Moon.vue";
+import MoonPhase from "@/components/MoonPhase.vue";
 
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
@@ -79,7 +80,9 @@ const onViewerReady = async ({Cesium, viewer}) => {
           <Terrain/>
           <Navigation/>
       <Moon/>
+      <MoonPhase v-bind="location" />
     </template>
+    <MoonPhase/>
   </vc-viewer>
 
 </template>
