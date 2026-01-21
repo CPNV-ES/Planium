@@ -1,129 +1,127 @@
 <script setup>
 import { ref, onBeforeUnmount, computed } from "vue";
 
-const moon2Position = ref(null);
-const point2 = ref(null);
-const label2 = ref(null);
-const viewerId = ref("Unknown");
+/*
+This component defines Moon's parameters and places it to real location in real time.
+ */
 
-const debugStatus = ref("Waiting for viewer...");
-let removeTickListener = null;
+// reactive references for Moon's visual appearance and position
+const moonPos = ref(null); // 3D position (x, y, z)
+const point = ref(null);  // point space marker (Moon display)
+const label = ref(null);  // display text above Moon
 
-// ---- SAFE EARTH ANCHOR (VALID CARTOGRAPHIC) ----
-let earthAnchor = null;
-
-// ---- POLYLINE POSITIONS (NEVER INVALID) ----
-const polylinePositions = computed(() => {
-  if (!earthAnchor || !moon2Position.value || typeof moon2Position.value.x !== "number") {
-    return undefined;
-  }
-  return [earthAnchor, moon2Position.value];
-});
+// const debugStatus = ref("Waiting for viewer..."); // DEBUG
+let removeTickListener = null; // for detaching Cesium clock listener when component is destroyed
 
 const onViewerReady = ({ Cesium, viewer }) => {
-  if (removeTickListener) return;
+  if (removeTickListener) return; // prevent attaching duplicate clock listeners
 
-  viewerId.value = viewer.container.id || "Main Window";
-  debugStatus.value = "Viewer Ready - Initializing Moon Engine...";
+  // debugStatus.value = "Viewer Ready - Tracking Moon..."; // DEBUG
 
-  viewer.scene.farToNearRatio = 1_000_000;
-  viewer.scene.logarithmicDepthBuffer = true;
+  viewer.scene.farToNearRatio = 1_000_000; // improve depth ratio for large scale scene (Earth to Moon)
+  viewer.scene.logarithmicDepthBuffer = true; // switches depth layer distribution to log for better large scale precision
 
-  if (viewer.scene.mode !== Cesium.SceneMode.SCENE3D) {
-    debugStatus.value = "Moon hidden (Not in 3D Mode)";
-    return;
-  }
-
-  // ---- CREATE EARTH ANCHOR ONCE ----
-  earthAnchor = Cesium.Ellipsoid.WGS84.scaleToGeodeticSurface(
-      Cesium.Cartesian3.fromDegrees(0, 0)
-  );
-
-  // ---- STYLES ----
-  point2.value = {
+  // style config
+  // point marker (Moon)
+  point.value = {
     pixelSize: 40,
-    color: Cesium.Color.fromCssColorString("#b026ff"),
+    color: Cesium.Color.fromCssColorString("#B2B2B2"), // Moon gray
     outlineColor: Cesium.Color.WHITE,
     outlineWidth: 2,
-    disableDepthTestDistance: Number.POSITIVE_INFINITY
+    disableDepthTestDistance: Number.POSITIVE_INFINITY // set limit to infinity to ensure Moon is always displayed in front
   };
 
-  label2.value = {
-    text: "INTEGRATED MOON",
+  // "Moon" label for easy spotting
+  label.value = {
+    text: "MOON",
     font: "14pt monospace",
-    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-    fillColor: Cesium.Color.YELLOW,
+    fillColor: Cesium.Color.WHITE,
     outlineWidth: 2,
     verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
     pixelOffset: new Cesium.Cartesian2(0, -50)
   };
 
-  // ---- SCRATCH OBJECTS ----
+  // temporally allocated storage for dynamic variables (avoid creating new objects every time)
   const scratchMatrix = new Cesium.Matrix3();
   const scratchFixedMatrix = new Cesium.Matrix3();
   const scratchCartesian = new Cesium.Cartesian3();
 
+  // frame counter
   let frame = 0;
 
+  // runs on every Cesium clock tick, computes Moon's position relative to Earth
   const listener = (clock) => {
     frame++;
-    if (frame % 5 !== 0) return;
+    if (frame % 5 !== 0) return; // update every 5 frames (avoid over-rendering)
 
+    // try to get current Moon position from scene
     let pos = viewer.scene.moon.position;
 
+    // use math to calculate if pos isn't readable from scene
     if (!Cesium.defined(pos)) {
-      pos = Cesium.Simon1994PlanetaryPositions.computeMoonPositionInEarthInertialFrame(
-          clock.currentTime
-      );
+      pos = Cesium.Simon1994PlanetaryPositions.computeMoonPositionInEarthInertialFrame(clock.currentTime);
     }
 
+    // stop if Moon's position is still unreadable
     if (!Cesium.defined(pos)) return;
 
+    // compute transformation matrix from ECEF (Earth-Fixed) to ICRF (inertial) coordinates at current time
     const icrfToFixed = Cesium.Transforms.computeFixedToIcrfMatrix(
         clock.currentTime,
         scratchMatrix
     );
 
-    if (!Cesium.defined(icrfToFixed)) {
-      debugStatus.value = "Waiting for transform data...";
-      return;
-    }
+    // stop if matrix is undefined
+    if (!Cesium.defined(icrfToFixed)) return;
 
-    const fixedToIcrf = Cesium.Matrix3.transpose(icrfToFixed, scratchFixedMatrix);
-    Cesium.Matrix3.multiplyByVector(fixedToIcrf, pos, scratchCartesian);
+    // transpose matrix to convert from ICRF (inertial) to ECEF (Earth-Fixed)
+    const fixedToIcrf = Cesium.Matrix3.transpose(
+        icrfToFixed,
+        scratchFixedMatrix
+    );
 
-    const distanceMoved = moon2Position.value
-        ? Cesium.Cartesian3.distance(moon2Position.value, scratchCartesian)
-        : Infinity;
+    // apply transformation to Moon's inertial position, result is cartesian coordinate
+    Cesium.Matrix3.multiplyByVector(
+        fixedToIcrf,
+        pos,
+        scratchCartesian
+    );
 
-    if (distanceMoved > 1) {
-      moon2Position.value = Cesium.Cartesian3.clone(
+    // reactive relocation and rerender if position delta > 10 meters
+    if (
+        !moonPos.value ||
+        // square function for strict positive value
+        Cesium.Cartesian3.distanceSquared(moonPos.value, scratchCartesian) > 100
+    ) {
+      moonPos.value = Cesium.Cartesian3.clone(
           scratchCartesian,
-          moon2Position.value || new Cesium.Cartesian3()
+          moonPos.value || new Cesium.Cartesian3()
       );
-      debugStatus.value = "Moon Position Synchronized";
+      // debugStatus.value = "Moon Synced"; // DEBUG
     }
   };
 
+  // add clock listener for regular Moon position update
   viewer.clock.onTick.addEventListener(listener);
+  // save function that removes clock listener when component is destroyed
   removeTickListener = () => viewer.clock.onTick.removeEventListener(listener);
 
-  /*
-  // ---- CAMERA FLIGHT ----
+  /* Uncomment to redirect camera to moon's location
+  // ---- CAMERA FLIGHT TO MOON ----
   setTimeout(() => {
-    if (!moon2Position.value) return;
+    if (!moonPos.value) return;
 
     debugStatus.value = "Traveling to Moon...";
 
     const offset = Cesium.Cartesian3.multiplyByScalar(
-        Cesium.Cartesian3.normalize(moon2Position.value, new Cesium.Cartesian3()),
+        Cesium.Cartesian3.normalize(moonPos.value, new Cesium.Cartesian3()),
         20_000_000,
         new Cesium.Cartesian3()
     );
 
     viewer.camera.flyTo({
       destination: Cesium.Cartesian3.subtract(
-          moon2Position.value,
+          moonPos.value,
           offset,
           new Cesium.Cartesian3()
       ),
@@ -136,35 +134,22 @@ const onViewerReady = ({ Cesium, viewer }) => {
   }, 4000);
   */
 };
+
 onBeforeUnmount(() => {
+  // ensure clock listener is removed when component is destroyed
   if (removeTickListener) removeTickListener();
 });
-
+// expose function to make it accessible outside component with
+// "moonComponentRef.value.onViewerReady({ Cesium, viewer})"
 defineExpose({ onViewerReady });
 </script>
 
 <template>
-  <div class="absolute top-24 left-6 bg-black/80 text-white p-4 font-mono text-xs z-[2000] border border-violet-500">
-    <div class="text-gray-400 mb-1 border-b border-gray-700 pb-1">
-      WINDOW: {{ viewerId }}
-    </div>
-    <div :class="moon2Position ? 'text-lime-400' : 'text-red-400'" class="mt-2">
-      ● {{ debugStatus }}
-    </div>
-    <div v-if="moon2Position" class="text-gray-400 mt-1">
-      COORDS DETECTED
-    </div>
-  </div>
-
-  <template v-if="moon2Position">
-    <vc-entity :position="moon2Position" :point="point2" :label="label2" />
-
-    <vc-entity v-if="polylinePositions">
-      <vc-graphics-polyline
-          :positions="polylinePositions"
-          :width="2"
-          :material="[255, 255, 0, 100]"
-      />
-    </vc-entity>
-  </template>
+  <!-- render Moon only if there's a valid position -->
+  <vc-entity
+      v-if="moonPos"
+      :position="moonPos"
+      :point="point"
+      :label="label"
+  />
 </template>
