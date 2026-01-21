@@ -1,6 +1,6 @@
 <script setup>
 import {VcViewer} from "vue-cesium";
-import {ref, watch} from "vue";
+import {nextTick, ref, watch} from "vue";
 import {loadPlanes, prepareScene, removeMoving} from "@/utils/scene.js";
 import Imagery from "@/components/imagery/Imagery.vue";
 import {flyTo} from "@/utils/camera.js";
@@ -18,6 +18,7 @@ const location = defineProps({
   lat: undefined
 })
 
+const moonComponentRef = ref(null)
 
 watch(
     [() => location.lat, () => location.lng],
@@ -38,14 +39,24 @@ watch(
 )
 
 const onViewerReady = async ({Cesium, viewer}) => {
+  isViewerReady.value = true
+  window.cesiumViewer = viewer; // This makes it accessible in the console!
+  window.CesiumGlobal = Cesium;
   if (viewerRef.value) {
-
     try {
       if (Cesium) {
         await prepareScene(viewer.scene)
         // removeMoving(viewer.scene)
       }
-
+      viewer.scene.farToNearRatio = 1000000;
+      viewer.scene.logarithmicDepthBuffer = true;
+      await nextTick()
+      if (moonComponentRef.value){
+        console.log("Found Moon Component, initializing...");
+        moonComponentRef.value.onViewerReady({Cesium, viewer})
+      } else {
+        console.error("Moon Component Ref is NULL. Check if Moon is inside a v-if.");
+      }
       flyTo(viewer.camera, Cesium, location.lat, location.lng)
       isViewerReady.value = true
       Vcviewer.value = viewer
@@ -74,7 +85,7 @@ const onViewerReady = async ({Cesium, viewer}) => {
           <Imagery/>
           <Terrain/>
           <Navigation/>
-      <Moon/>
+      <Moon ref="moonComponentRef" />
     </template>
   </vc-viewer>
 
