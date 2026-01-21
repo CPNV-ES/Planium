@@ -5,7 +5,7 @@ Project : FastAPI Flights Backend
 Description: Backend service to fetch and serve live flight data using OpenSky API.
 """
 import uvicorn
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fetchFlights import get_flights
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -42,7 +42,8 @@ def get_flights_endpoint(
 
     # Fetch flights for the given coordinates
     flights = get_flights(lat, long)
-
+    if flights.status_code == 429:
+        raise HTTPException(status_code=429, detail="Item not found")
     # If no data is found
     if not flights:
         return {"message": "No data found"}

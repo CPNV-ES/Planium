@@ -51,6 +51,8 @@ def get_flights(user_lat, user_long):
     # search for data at the URL specified with the parameters
     response = requests.get(url, params=params)
 
+    if response.status_code != 200:
+        return response
     # extract only the JSON of the response
     data = response.json()
 
