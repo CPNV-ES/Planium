@@ -19,10 +19,11 @@ def get_flights(user_lat, user_long):
         List of dictionaries containing flight data
 
     Example:
-        [{'origin_country': 'Portugal', 'lat': 46.8, 'long': 7.0111, 'alt': 10.51, 'velocity': 196.84,
+        [{'call_sign': 'TWY235  ', 'origin_country': 'Portugal', 'lat': 46.8, 'long': 7.0111, 'alt': 10.51, 'velocity': 196.84,
         'heading': 231.15, 'vertical_rate': 2.28},...]
 
     Field Descriptions:
+        "call_sign": Flight identifier used in communications
         "origin_country": country of origin of the plane
         "lat": plane latitude (°) -90 to 90
         "long": plane longitude (°) -180 to 180
@@ -64,6 +65,7 @@ def get_flights(user_lat, user_long):
     for state in data["states"]:
         # creating a dictionary that stores only useful data
         flight = {
+            "call_sign": state[1],
             "origin_country": state[2],
             "lat": state[6],
             "long": state[5],
