@@ -3,5 +3,5 @@ export async function get3dTilesetById(id) {
 }
 
 export async function getTilesetCartesian(){
-    return {x:-29,y: 8, z:25}
+    return {x:-24,y: 12, z:45}
 }

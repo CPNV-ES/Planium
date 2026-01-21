@@ -8,5 +8,6 @@ import lang from 'vue-cesium/es/locale/lang/en-us.mjs';
 const app = createApp(App)
 app.mount('#app')
 app.use(VueCesium,{
+    accessToken: import.meta.env.VITE_CESIUM_ACCESS_TOKEN,
     locale: lang
 })

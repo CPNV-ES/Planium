@@ -1,11 +1,11 @@
 <script setup>
 import {VcImageryProviderIon} from "vue-cesium";
-defineProps({
-  assetId: ""
+const props = defineProps({
+  assetId: Number
 })
 </script>
 
 <template>
-  <vc-imagery-provider-ion assetId="2">
+  <vc-imagery-provider-ion :assetId="props.assetId">
   </vc-imagery-provider-ion>
 </template>
