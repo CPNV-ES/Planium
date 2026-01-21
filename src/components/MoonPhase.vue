@@ -1,11 +1,33 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import {ref, onMounted, watch} from 'vue';
+import {flyTo} from "@/utils/camera.js";
 
 const moonImageUrl = ref(null); // stores the final processed image URL
 const isLoading = ref(true); // boolean flag to track the loading state of requests
 const error = ref(null); // exception messages container
+const location = defineProps({ // user's location ( CoordinateForm -> Viewer -> MoonPhase))
+  lng: undefined,
+  lat: undefined
+})
 
-const fetchMoonPhase = async () => {
+watch(
+    [() => location.lat, () => location.lng],
+    ([newLat, newLng]) => {
+      if (newLat !== 0 && newLng !== 0) {
+        fetchMoonPhase(newLat, newLng);
+      } else {
+        console.error(
+            "Unable to update moon phase: location is invalid.",
+            {
+              lat: newLat,
+              lng: newLng
+            }
+        );
+      }
+    }
+)
+
+const fetchMoonPhase = async (lat, lng) => {
   /* Fetch Moon's phase from AstronomyAPI
   * documentation: https://docs.astronomyapi.com/endpoints/studio/moon-phase
   * */
@@ -50,8 +72,8 @@ const fetchMoonPhase = async () => {
           "textColor": "white"
         },
         "observer": {
-          "latitude": 6.56774, // TODO change to reactive variable
-          "longitude": 79.88956, // TODO change to reactive variable
+          "latitude": lat,
+          "longitude": lng,
           "date": today // current date
         },
         "view": {
@@ -77,8 +99,6 @@ const fetchMoonPhase = async () => {
   }
 };
 
-// fetchMoonPhase executes automatically after component is successfully mounted
-onMounted(fetchMoonPhase);
 </script>
 
 <template>

@@ -76,8 +76,8 @@ const onViewerReady = async ({Cesium, viewer}) => {
           <Terrain/>
           <Navigation/>
       <Moon/>
+      <MoonPhase v-bind="location" />
     </template>
-    <MoonPhase/>
   </vc-viewer>
 
 </template>
