@@ -74,7 +74,6 @@ const onViewerReady = async ({Cesium, viewer}) => {
       ref="viewerRef"
       :access-token="cesiumToken"
       @ready="onViewerReady">
-
     <template v-if="isViewerReady">
           <Imagery/>
           <Terrain/>

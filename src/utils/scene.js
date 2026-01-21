@@ -113,7 +113,7 @@ export async function movePlanes(viewer){
 
     const data = await getFLights('http://localhost:8080/flights', {long:6.500465335539498 , lat: 46.82166054184684})
 
-    if (data !== undefined) {
+    if (data !== undefined && viewer.entities !== undefined) {
         data.forEach(flight => {
             let entity = viewer.entities.values.find((element) => element.id === flight.id)
             const time = Cesium.JulianDate.now();
@@ -122,7 +122,7 @@ export async function movePlanes(viewer){
                 description: `Location: (${flight.long}, ${flight.lat}, ${flight.alt})`,
                 position: nextPos,
                 point: {pixelSize: 10, color: Cesium.Color.RED},
-                orientation: new Cesium.VelocityOrientationProperty(nextPos)
+                orientation: new Cesium.VelocityOrientationProperty(entity.position)
             });
 
             entity.position.addSample(time, nextPos)
