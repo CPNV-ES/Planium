@@ -14,6 +14,11 @@ export async function prepareScene(scene){
 
     // disable scroll wheel zoom
     scene.screenSpaceCameraController.enableZoom = false;
+
+    // disable the movement with the mouse
+    scene.screenSpaceCameraController.enableTranslate = false;
+
+    scene.screenSpaceCameraController.enableRotate = false;
 }
 
 export function addTilesetToScene(scene, tileset){
