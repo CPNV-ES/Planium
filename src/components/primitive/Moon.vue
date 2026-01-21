@@ -19,10 +19,6 @@ const moonPos = Cesium.Simon1994PlanetaryPositions.computeMoonPositionInEarthIne
         text: 'Moon ',
         pixelOffset: [0, 80]
       }
-      billboard.value = {
-        image: 'https://zouyaoji.top/vue-cesium/favicon.png',
-        scale: 1
-      }
 
 </script>
 <template>
