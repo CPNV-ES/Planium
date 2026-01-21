@@ -10,10 +10,10 @@ const fetchMoonPhase = async () => {
   * documentation: https://docs.astronomyapi.com/endpoints/studio/moon-phase
   * */
   // credentials for authentication
-  const appId = "VITE_MOON_PHASE_APP_ID";
-  const appSecret = "VITE_MOON_PHASE_APP_SECRET";
+  const appId = import.meta.env.VITE_MOON_PHASE_APP_ID; // your app id
+  const appSecret = import.meta.env.VITE_MOON_PHASE_APP_SECRET; // your app secret
 
-  // stop function if missing credentials
+  // check if missing credentials
   if (!appId || !appSecret) {
     error.value = "API Credentials missing";
     isLoading.value = false;
@@ -40,7 +40,7 @@ const fetchMoonPhase = async () => {
       },
 
       // src: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify
-      body: JSON.stringify({
+      body: JSON.stringify({ // prepare params as json body
         "format": "png",  // moon phase asset format
         "style": { // custom visual parameters for display container
           "moonStyle": "default", // best quality moon display type (default - shaded - sketch)
@@ -50,8 +50,8 @@ const fetchMoonPhase = async () => {
           "textColor": "white"
         },
         "observer": {
-          "latitude": 6.56774,
-          "longitude": 79.88956,
+          "latitude": 6.56774, // TODO change to reactive variable
+          "longitude": 79.88956, // TODO change to reactive variable
           "date": today // current date
         },
         "view": {
