@@ -27,7 +27,7 @@ def get_flights(user_lat, user_long):
         "origin_country": country of origin of the plane
         "lat": plane latitude (°) -90 to 90
         "long": plane longitude (°) -180 to 180
-        "alt": plane altitude (km)
+        "alt": plane altitude (m)
         "velocity": plane speed (m/s)
         "heading": plane heading (°) 0 to 360, true north
         "vertical_rate": Vertical speed (m/s)
@@ -69,7 +69,7 @@ def get_flights(user_lat, user_long):
             "origin_country": state[2],
             "lat": state[6],
             "long": state[5],
-            "alt": state[7]/1000 if state[7] else state[7],
+            "alt": state[7],
             "velocity": state[9],
             "heading": state[10],
             "vertical_rate": state[11]
