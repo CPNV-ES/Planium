@@ -51,6 +51,8 @@ def get_flights(user_lat, user_long):
     # search for data at the URL specified with the parameters
     response = requests.get(url, params=params)
 
+    if response.status_code != 200:
+        return response
     # extract only the JSON of the response
     data = response.json()
 
@@ -64,10 +66,11 @@ def get_flights(user_lat, user_long):
     for state in data["states"]:
         # creating a dictionary that stores only useful data
         flight = {
+            "id": state[1],
             "origin_country": state[2],
             "lat": state[6],
             "long": state[5],
-            "alt": state[7]/1000 if state[7] else state[7],
+            "alt": state[7],
             "velocity": state[9],
             "heading": state[10],
             "vertical_rate": state[11]
