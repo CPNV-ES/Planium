@@ -51,12 +51,12 @@ export async function loadPlanes(viewer){
         const stop = Cesium.JulianDate.addSeconds(start, 10000000000, new Cesium.JulianDate());
 
         viewer.clock.startTime = start.clone();
-        viewer.clock.stopTime = stop.clone();
+        // viewer.clock.stopTime = stop.clone();
         viewer.clock.currentTime = start.clone();
 
         // viewer.timeline.zoomTo(start, stop);
         // Speed up the playback speed 50x.
-        viewer.clock.multiplier = 2;
+        viewer.clock.multiplier = 1;
         // Start playing the scene.
         viewer.clock.shouldAnimate = true;
 
@@ -78,11 +78,11 @@ export async function loadPlanes(viewer){
             positionProperty.forwardExtrapolationType = Cesium.ExtrapolationType.HOLD
             positionProperty.backwardExtrapolationType = Cesium.ExtrapolationType.HOLD
 
-            viewer.entities.add({
-                description: `Location: (${flight.long}, ${flight.lat}, ${flight.alt})`,
-                position: position,
-                point: {pixelSize: 10, color: Cesium.Color.RED}
-            });
+            // viewer.entities.add({
+            //     description: `Location: (${flight.long}, ${flight.lat}, ${flight.alt})`,
+            //     position: position,
+            //     point: {pixelSize: 10, color: Cesium.Color.RED}
+            // });
 
             await loadModel(viewer, start, stop, positionProperty, airplaneUri, flight.id);
 
@@ -103,30 +103,31 @@ async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id)
         model: {uri: airplaneUri,minimumPixelSize: 200  },
         // Automatically compute the orientation from the position.
         orientation: new Cesium.VelocityOrientationProperty(positionProperty),
-        path: new Cesium.PathGraphics({ width: 3 })
+        path: new Cesium.PathGraphics({ width: 3 , trailTime: 30})
     });
-
-    // viewer.trackedEntity = airplaneEntity;
 }
 
 export async function movePlanes(viewer){
 
     const data = await getFLights('http://localhost:8080/flights', {long:6.500465335539498 , lat: 46.82166054184684})
-
+    const futureTime = Cesium.JulianDate.addSeconds(
+        viewer.clock.currentTime,
+        30,
+        new Cesium.JulianDate()
+    );
     if (data !== undefined && viewer.entities !== undefined) {
-        data.forEach(flight => {
-            let entity = viewer.entities.values.find((element) => element.id === flight.id)
-            const time = Cesium.JulianDate.now();
-            const nextPos = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
-            viewer.entities.add({
-                description: `Location: (${flight.long}, ${flight.lat}, ${flight.alt})`,
-                position: nextPos,
-                point: {pixelSize: 10, color: Cesium.Color.RED},
-                orientation: new Cesium.VelocityOrientationProperty(entity.position)
-            });
+        viewer.entities.values.forEach(entity => {
+            const flight = data.find(flight => flight.id === entity.id)
+            if(flight !== undefined){
+                const time = Cesium.JulianDate.now();
+                const nextPos = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
+                entity.position.addSample(futureTime, nextPos)
+            }else{
+                viewer.entities.remove(entity)
+            }
 
-            entity.position.addSample(time, nextPos)
         })
+
     }
 }
 
