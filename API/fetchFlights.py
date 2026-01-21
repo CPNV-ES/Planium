@@ -70,7 +70,7 @@ def get_flights(user_lat, user_long):
             "origin_country": state[2],
             "lat": state[6],
             "long": state[5],
-            "alt": state[7]/1000 if state[7] else state[7],
+            "alt": state[7],
             "velocity": state[9],
             "heading": state[10],
             "vertical_rate": state[11]

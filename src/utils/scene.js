@@ -70,7 +70,7 @@ export async function loadPlanes(viewer){
             // Declare the time for this individual sample and store it in a new JulianDate instance.
             // const time = Cesium.JulianDate.addSeconds(start, i * timeStepInSeconds, new Cesium.JulianDate());
 
-            const position = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt * 1000);
+            const position = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt);
             // Store the position along with its timestamp.
             // Here we add the positions all upfront, but these can be added at run-time as samples are received from a server.
             positionProperty.addSample(start, position);
@@ -117,11 +117,12 @@ export async function movePlanes(viewer){
         data.forEach(flight => {
             let entity = viewer.entities.values.find((element) => element.id === flight.id)
             const time = Cesium.JulianDate.now();
-            const nextPos = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt * 1000)
+            const nextPos = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
             viewer.entities.add({
                 description: `Location: (${flight.long}, ${flight.lat}, ${flight.alt})`,
                 position: nextPos,
-                point: {pixelSize: 10, color: Cesium.Color.RED}
+                point: {pixelSize: 10, color: Cesium.Color.RED},
+                orientation: new Cesium.VelocityOrientationProperty(nextPos)
             });
 
             entity.position.addSample(time, nextPos)
