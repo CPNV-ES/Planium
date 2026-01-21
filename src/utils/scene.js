@@ -11,6 +11,9 @@ export async function prepareScene(scene){
         allowTextureFilterAnisotropic: false,
         cameraUnderground: false
     }
+
+    // disable scroll wheel zoom
+    scene.screenSpaceCameraController.enableZoom = false;
 }
 
 export function addTilesetToScene(scene, tileset){
