@@ -5,7 +5,7 @@ Project : FastAPI Flights Backend
 Desc : API data fetching script
 """
 import requests
-
+from fastapi import HTTPException
 
 def get_flights(user_lat, user_long):
     """
