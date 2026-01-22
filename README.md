@@ -6,10 +6,15 @@
 - [Vue.js](https://vuejs.org/)
 - [vue-cesium](https://zouyaoji.top/vue-cesium/#/en-US)
 - [DaisyUi](https://daisyui.com/)
+
+## Requirements
+- Node.js 20.19.0+
+- Python 3.10+
+
 ## Project Setup
 
 ```sh
-npm install
+npm run install-all
 ```
 
 ### Compile and Hot-Reload for Development
