@@ -120,8 +120,7 @@ async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id)
     });
 }
 
-export async function movePlanes(viewer){
-
+export async function updatePlanes(viewer){
     const data = await getFLights('http://localhost:8080/flights', {long:6.500465335539498 , lat: 46.82166054184684})
     const futureTime = Cesium.JulianDate.addSeconds(
         viewer.clock.currentTime,
