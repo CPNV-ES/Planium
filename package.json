@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "npx concurrently \"npm run frontend\" \"npm run backend\"",
     "frontend": "vite",
-    "backend": "cd API && .venv\\Scripts\\activate && pip install -r requirements.txt && py main.py",
+    "backend": "cd API && (source .venv/bin/activate || .\\\\.venv\\\\Scripts\\\\activate) && python3 main.py || py main.py",
     "install-all": "npm install && cd API && py -m venv .venv && .venv\\Scripts\\activate && pip install -r requirements.txt",
     "build": "vite build",
     "preview": "vite preview"
