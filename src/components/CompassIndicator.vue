@@ -1,6 +1,5 @@
 <template>
   <div class="compass-container">
-    <!-- Direction display box -->
     <div class="direction-info">
       <div class="cardinal-direction">{{ cardinalDirection }}</div>
       <div class="degree-value">{{ Math.round(heading) }}°</div>
@@ -9,7 +8,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import * as Cesium from 'cesium';
 
 const props = defineProps({
@@ -35,23 +34,52 @@ const cardinalDirection = computed(() => {
 
 const updateOrientation = () => {
   const camera = props.viewer?.camera;
-  if (!camera) return;
+  if (!camera) {
+    console.log('Camera not available yet');
+    return;
+  }
 
   let h = Cesium.Math.toDegrees(camera.heading);
   if (h < 0) h += 360;
   heading.value = h;
 };
 
-let removePostRender;
+let removePostRender = null;
 
-onMounted(() => {
-  if (!props.viewer?.scene) return;
+const setupListener = () => {
+  // Clean up previous listener
+  if (removePostRender) {
+    removePostRender();
+    removePostRender = null;
+  }
 
+  // Check if viewer and scene are ready
+  if (!props.viewer?.scene) {
+    console.log('Viewer or scene not ready');
+    return;
+  }
+
+  console.log('Setting up compass listener');
+
+  // Initial update
   updateOrientation();
 
+  // Listen to scene rendering
   removePostRender = props.viewer.scene.postRender.addEventListener(() => {
     updateOrientation();
   });
+};
+
+// Watch for viewer changes
+watch(() => props.viewer, (newViewer) => {
+  if (newViewer?.scene) {
+    console.log('Viewer is now ready, setting up compass');
+    setupListener();
+  }
+}, { immediate: true });
+
+onMounted(() => {
+  setupListener();
 });
 
 onUnmounted(() => {
