@@ -13,6 +13,19 @@ export async function prepareScene(scene){
         allowTextureFilterAnisotropic: false,
         cameraUnderground: false
     }
+
+    const controller = scene.screenSpaceCameraController;
+
+    // Disable all default controls
+    controller.enableRotate = false;
+    controller.enableTranslate = false;
+    controller.enableZoom = false;
+    controller.enableTilt = false;
+    controller.enableLook = false;
+
+    controller.lookEventTypes = Cesium.CameraEventType.LEFT_DRAG;
+    controller.enableLook = true;
+
 }
 
 export function addTilesetToScene(scene, tileset){
