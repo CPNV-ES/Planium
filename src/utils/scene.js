@@ -19,7 +19,7 @@ export async function prepareScene(scene){
     // Disable all default controls
     controller.enableRotate = false;
     controller.enableTranslate = false;
-    controller.enableZoom = true;
+    controller.enableZoom = false;
     controller.enableTilt = false;
     controller.enableLook = false;
 
