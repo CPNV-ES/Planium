@@ -62,11 +62,13 @@ const onViewerReady = async ({Cesium, viewer}) => {
       flyTo(viewer.camera, Cesium, location.lat, location.lng)
       mapViewer.value = viewer
       cesium.value = Cesium
-      await loadPlanes(viewer)
+      await loadPlanes(mapViewer.value)
       isViewerReady.value = true
+
       setInterval(async () => {
-       await movePlanes(viewer)
+       await movePlanes(mapViewer.value)
       }, 30000)
+
     } catch (error) {
       console.error("Error loading tileset:", error);
     }
@@ -85,7 +87,6 @@ const onViewerReady = async ({Cesium, viewer}) => {
       ref="viewerRef"
       :access-token="cesiumToken"
       @ready="onViewerReady">
-
     <template v-if="isViewerReady">
           <Imagery/>
           <Terrain/>
