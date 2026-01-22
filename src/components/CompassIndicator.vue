@@ -20,52 +20,43 @@ const props = defineProps({
 });
 
 const heading = ref(0);
-const pitch = ref(0);
 
-// Convert heading to cardinal direction
 const cardinalDirection = computed(() => {
   const h = heading.value;
-
   if (h >= 337.5 || h < 22.5) return 'Nord';
-  if (h >= 22.5 && h < 67.5) return 'Nord-Est';
-  if (h >= 67.5 && h < 112.5) return 'Est';
-  if (h >= 112.5 && h < 157.5) return 'Sud-Est';
-  if (h >= 157.5 && h < 202.5) return 'Sud';
-  if (h >= 202.5 && h < 247.5) return 'Sud-Ouest';
-  if (h >= 247.5 && h < 292.5) return 'Ouest';
-  if (h >= 292.5 && h < 337.5) return 'Nord-Ouest';
-
-  return 'Nord';
+  if (h < 67.5) return 'Nord-Est';
+  if (h < 112.5) return 'Est';
+  if (h < 157.5) return 'Sud-Est';
+  if (h < 202.5) return 'Sud';
+  if (h < 247.5) return 'Sud-Ouest';
+  if (h < 292.5) return 'Ouest';
+  return 'Nord-Ouest';
 });
 
-let cameraChangeListener;
-
 const updateOrientation = () => {
-  if (props.viewer?.camera) {
-    heading.value = Cesium.Math.toDegrees(props.viewer.camera.heading);
-    pitch.value = Cesium.Math.toDegrees(props.viewer.camera.pitch);
+  const camera = props.viewer?.camera;
+  if (!camera) return;
 
-    // Normalize heading between 0 and 360
-    if (heading.value < 0) {
-      heading.value += 360;
-    }
-  }
+  let h = Cesium.Math.toDegrees(camera.heading);
+  if (h < 0) h += 360;
+  heading.value = h;
 };
 
-onMounted(() => {
-  if (props.viewer?.camera) {
-    // Initial update
-    updateOrientation();
+let removePostRender;
 
-    // Listen to camera changes
-    cameraChangeListener = props.viewer.camera.changed.addEventListener(updateOrientation);
-  }
+onMounted(() => {
+  if (!props.viewer?.scene) return;
+
+  updateOrientation();
+
+  removePostRender = props.viewer.scene.postRender.addEventListener(() => {
+    updateOrientation();
+  });
 });
 
 onUnmounted(() => {
-  // Clean up event listener
-  if (cameraChangeListener) {
-    cameraChangeListener();
+  if (removePostRender) {
+    removePostRender();
   }
 });
 </script>

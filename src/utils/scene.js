@@ -23,7 +23,6 @@ export async function prepareScene(scene){
     controller.enableTilt = false;
     controller.enableLook = false;
 
-    // Réactiver le look avec le clic gauche (au lieu de Ctrl+clic)
     controller.lookEventTypes = Cesium.CameraEventType.LEFT_DRAG;
     controller.enableLook = true;
 
