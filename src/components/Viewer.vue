@@ -64,9 +64,11 @@ const onViewerReady = async ({Cesium, viewer}) => {
       cesium.value = Cesium
       await loadPlanes(mapViewer.value)
       isViewerReady.value = true
+
       setInterval(async () => {
        await movePlanes(mapViewer.value)
       }, 30000)
+
     } catch (error) {
       console.error("Error loading tileset:", error);
     }

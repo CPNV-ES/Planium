@@ -100,7 +100,7 @@ async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id)
         // position: positionProperty,
         position: positionProperty,
         // Attach the 3D model instead of the green point.
-        model: {uri: airplaneUri,minimumPixelSize: 200  },
+        model: {uri: airplaneUri,minimumPixelSize: 100  },
         // Automatically compute the orientation from the position.
         orientation: new Cesium.VelocityOrientationProperty(positionProperty),
         path: new Cesium.PathGraphics({ width: 3 , trailTime: 30})
@@ -112,16 +112,14 @@ export async function movePlanes(viewer){
     const data = await getFLights('http://localhost:8080/flights', {long:6.500465335539498 , lat: 46.82166054184684})
     const futureTime = Cesium.JulianDate.addSeconds(
         viewer.clock.currentTime,
-        30,
+        31,
         new Cesium.JulianDate()
     );
     if (data !== undefined && viewer.entities !== undefined) {
         viewer.entities.values.forEach(entity => {
             const flight = data.find(flight => flight.id === entity.id)
             if(flight !== undefined){
-                const time = Cesium.JulianDate.now();
-                const nextPos = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
-                entity.position.addSample(futureTime, nextPos)
+                addNextPostion(flight, entity, futureTime)
             }else{
                 viewer.entities.remove(entity)
             }
@@ -131,7 +129,9 @@ export async function movePlanes(viewer){
     }
 }
 
-function addNextPostion(){
-
+function addNextPostion(flight, entity, futureTime){
+    const time = Cesium.JulianDate.now();
+    const nextPos = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
+    entity.position.addSample(futureTime, nextPos)
 }
 
