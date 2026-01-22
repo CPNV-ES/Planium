@@ -5,7 +5,37 @@ Project : FastAPI Flights Backend
 Desc : API data fetching script
 """
 import requests
+from os import path, getenv
+from dotenv import load_dotenv
 from fastapi import HTTPException
+
+dotenv_path = path.join(path.dirname(__file__), '..', '.env')
+load_dotenv(dotenv_path)
+
+
+def get_opensky_token():
+    client_id = getenv("OPENSKY_CLIENT_ID")
+    client_secret = getenv("OPENSKY_CLIENT_SECRET")
+
+    auth_url = "https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token"
+
+    payload = {
+        "grant_type": "client_credentials",
+        "client_id": client_id,
+        "client_secret": client_secret
+    }
+
+    try:
+        response = requests.post(auth_url, data=payload)
+        response.raise_for_status()
+
+        token_data = response.json()
+        return token_data.get("access_token")
+
+    except requests.exceptions.RequestException as e:
+        print(f"Erreur lors de l'authentification : {e}")
+        return None
+
 
 def get_flights(user_lat, user_long):
     """
@@ -47,9 +77,9 @@ def get_flights(user_lat, user_long):
         "lamax": user_lat,
         "lomax": user_long+1
     }
-
+    token = get_opensky_token()
     # search for data at the URL specified with the parameters
-    response = requests.get(url, params=params)
+    response = requests.get(url, params=params, headers={'Authorization': 'Bearer ' + token})
 
     if response.status_code != 200:
         if response.status_code == 429:
