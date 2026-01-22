@@ -8,8 +8,6 @@ import Navigation from "@/components/navigation/Navigation.vue";
 import Terrain from "@/components/terrain/Terrain.vue";
 import Moon from "@/components/primitive/Moon.vue";
 import MoonPhase from "@/components/MoonPhase.vue";
-import CameraController from './CameraController.vue'
-import CompassIndicator from '@/components/CompassIndicator.vue'
 
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
@@ -43,18 +41,14 @@ watch(
 
 
 const onViewerReady = async ({Cesium, viewer}) => {
-  mapViewer.value = viewer
-  cesium.value = Cesium
-  window.cesiumViewer = viewer;
-  window.CesiumGlobal = Cesium;
-
-
   isViewerReady.value = true
-
+  window.cesiumViewer = viewer; // This makes it accessible in the console!
+  window.CesiumGlobal = Cesium;
   if (viewerRef.value) {
     try {
       if (Cesium) {
         await prepareScene(viewer.scene)
+        // removeMoving(viewer.scene)
       }
       viewer.scene.farToNearRatio = 1000000;
       viewer.scene.logarithmicDepthBuffer = true;
@@ -66,10 +60,15 @@ const onViewerReady = async ({Cesium, viewer}) => {
         console.error("Moon Component Ref is NULL. Check if Moon is inside a v-if.");
       }
       flyTo(viewer.camera, Cesium, location.lat, location.lng)
-      await loadPlanes(viewer)
+      mapViewer.value = viewer
+      cesium.value = Cesium
+      await loadPlanes(mapViewer.value)
+      isViewerReady.value = true
+
       setInterval(async () => {
-        await movePlanes(viewer)
+       await movePlanes(mapViewer.value)
       }, 30000)
+
     } catch (error) {
       console.error("Error loading tileset:", error);
     }
@@ -88,7 +87,6 @@ const onViewerReady = async ({Cesium, viewer}) => {
       ref="viewerRef"
       :access-token="cesiumToken"
       @ready="onViewerReady">
-
     <template v-if="isViewerReady">
           <Imagery/>
           <Terrain/>
@@ -98,7 +96,6 @@ const onViewerReady = async ({Cesium, viewer}) => {
     </template>
     <MoonPhase/>
   </vc-viewer>
-  <CameraController v-if="isViewerReady" :viewer="mapViewer" />
-  <CompassIndicator v-if="isViewerReady" :viewer="mapViewer" />
+
 </template>
 
