@@ -1,7 +1,6 @@
 <script setup>
 import CoordinateForm from "@/components/CoordinateForm.vue";
 import NavBar from "@/components/NavBar.vue";
-
 </script>
 
 <template>

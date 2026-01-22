@@ -12,13 +12,19 @@ export async function prepareScene(scene){
         cameraUnderground: false
     }
 
-    // disable scroll wheel zoom
-    scene.screenSpaceCameraController.enableZoom = false;
+    const controller = scene.screenSpaceCameraController;
 
-    // disable the movement with the mouse
-    scene.screenSpaceCameraController.enableTranslate = false;
+    // Disable all default controls
+    controller.enableRotate = false;
+    controller.enableTranslate = false;
+    controller.enableZoom = false;
+    controller.enableTilt = false;
+    controller.enableLook = false;
 
-    scene.screenSpaceCameraController.enableRotate = false;
+    // Réactiver le look avec le clic gauche (au lieu de Ctrl+clic)
+    controller.lookEventTypes = Cesium.CameraEventType.LEFT_DRAG;
+    controller.enableLook = true;
+
 }
 
 export function addTilesetToScene(scene, tileset){

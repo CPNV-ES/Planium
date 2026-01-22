@@ -9,6 +9,7 @@ import Terrain from "@/components/terrain/Terrain.vue";
 import Moon from "@/components/primitive/Moon.vue";
 import MoonPhase from "@/components/MoonPhase.vue";
 import CameraController from './CameraController.vue'
+import CompassIndicator from '@/components/CompassIndicator.vue'
 
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
@@ -52,7 +53,7 @@ const onViewerReady = async ({Cesium, viewer}) => {
       isViewerReady.value = true
       Vcviewer.value = viewer
       cesium.value = Cesium
-     await loadPlanes(viewer)
+      await loadPlanes(viewer)
 
     } catch (error) {
       console.error("Error loading tileset:", error);
@@ -73,14 +74,15 @@ const onViewerReady = async ({Cesium, viewer}) => {
       @ready="onViewerReady">
 
     <template v-if="isViewerReady">
-          <Imagery/>
-          <Terrain/>
-          <Navigation/>
+      <Imagery/>
+      <Terrain/>
+      <Navigation/>
       <Moon/>
       <MoonPhase v-bind="location" />
     </template>
     <MoonPhase/>
   </vc-viewer>
   <CameraController v-if="isViewerReady" :viewer="Vcviewer" />
+  <CompassIndicator v-if="isViewerReady" :viewer="Vcviewer" />
 </template>
 
