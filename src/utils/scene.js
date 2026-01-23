@@ -14,6 +14,7 @@ export async function prepareScene(scene){
         cameraUnderground: false
     }
 
+
     const controller = scene.screenSpaceCameraController;
 
     // Disable all default controls
@@ -25,6 +26,42 @@ export async function prepareScene(scene){
 
     controller.lookEventTypes = Cesium.CameraEventType.LEFT_DRAG;
     controller.enableLook = true;
+
+    // source : https://cesium.com/learn/cesiumjs/ref-doc/Camera.html
+    // source : https://developer.mozilla.org/en-US/docs/Web/API/WheelEvent
+
+    // minimum FOV degrees in radian
+    const MIN_FOV = Cesium.Math.toRadians(5);
+
+    // maximum FOV degrees in radian
+    const MAX_FOV = Cesium.Math.toRadians(100);
+
+    // increment in radian for each step of the mouse
+    const STEP = Cesium.Math.toRadians(2);
+
+    const canvas = scene.canvas;
+
+    // listen for mouse wheel events
+    canvas.addEventListener(
+        "wheel",
+        (event) => {
+            event.preventDefault();
+
+            const camera = scene.camera;
+            let fov = camera.frustum.fov;
+
+            // increment the FOV
+            fov += event.deltaY > 0 ? STEP : -STEP;
+
+            // check the limits
+            camera.frustum.fov = Cesium.Math.clamp(
+                fov,
+                MIN_FOV,
+                MAX_FOV
+            );
+        },
+        { passive: false }
+    );
 
 }
 
@@ -42,7 +79,7 @@ export function removeMoving(scene){
     scene.screenSpaceCameraController.enableRotate = false;
 }
 export async function loadPlanes(viewer){
-    const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
+    const airplaneUri = await Cesium.IonResource.fromAssetId(4373030);
     const data = await getFLights('http://localhost:8080/flights', {long:6.500465335539498 , lat: 46.82166054184684})
 
     if(data !== undefined) {
