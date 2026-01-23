@@ -79,7 +79,7 @@ export function removeMoving(scene){
     scene.screenSpaceCameraController.enableRotate = false;
 }
 export async function loadPlanes(viewer){
-    const airplaneUri = await Cesium.IonResource.fromAssetId(4373030);
+    const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
     const data = await getFLights('http://localhost:8080/flights', {long:6.500465335539498 , lat: 46.82166054184684})
 
     if(data !== undefined) {
