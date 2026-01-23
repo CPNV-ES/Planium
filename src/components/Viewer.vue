@@ -9,6 +9,8 @@ import Terrain from "@/components/terrain/Terrain.vue";
 import Moon from "@/components/primitive/Moon.vue";
 import MoonPhase from "@/components/MoonPhase.vue";
 import MoonFocusButton from "@/components/primitive/MoonFocusButton.vue";
+import CameraController from './CameraController.vue'
+import CompassIndicator from '@/components/CompassIndicator.vue'
 
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
@@ -45,6 +47,7 @@ const onViewerReady = async ({Cesium, viewer}) => {
   isViewerReady.value = true
   window.cesiumViewer = viewer; // This makes it accessible in the console!
   window.CesiumGlobal = Cesium;
+
   if (viewerRef.value) {
     try {
       if (Cesium) {
@@ -63,11 +66,13 @@ const onViewerReady = async ({Cesium, viewer}) => {
       flyTo(viewer.camera, Cesium, location.lat, location.lng)
       mapViewer.value = viewer
       cesium.value = Cesium
-      await loadPlanes(viewer)
+      await loadPlanes(mapViewer.value)
       isViewerReady.value = true
+
       setInterval(async () => {
-       await movePlanes(viewer)
+       await movePlanes(mapViewer.value)
       }, 30000)
+
     } catch (error) {
       console.error("Error loading tileset:", error);
     }
@@ -86,7 +91,6 @@ const onViewerReady = async ({Cesium, viewer}) => {
       ref="viewerRef"
       :access-token="cesiumToken"
       @ready="onViewerReady">
-
     <template v-if="isViewerReady">
           <Imagery/>
           <Terrain/>
@@ -101,6 +105,7 @@ const onViewerReady = async ({Cesium, viewer}) => {
     </template>
     <MoonPhase/>
   </vc-viewer>
-
+  <CameraController v-if="isViewerReady" :viewer="mapViewer" />
+  <CompassIndicator v-if="isViewerReady" :viewer="mapViewer" />
 </template>
 
