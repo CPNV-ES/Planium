@@ -8,6 +8,7 @@ import Navigation from "@/components/navigation/Navigation.vue";
 import Terrain from "@/components/terrain/Terrain.vue";
 import Moon from "@/components/primitive/Moon.vue";
 import MoonPhase from "@/components/MoonPhase.vue";
+import MoonFocusButton from "@/components/primitive/MoonFocusButton.vue";
 
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
@@ -92,6 +93,11 @@ const onViewerReady = async ({Cesium, viewer}) => {
           <Navigation/>
       <Moon ref="moonComponentRef" />
       <MoonPhase v-bind="location" />
+      <MoonFocusButton
+          :cesiumViewer="mapViewer"
+          :cesium="cesium"
+          :moonComponent="moonComponentRef"
+      />
     </template>
     <MoonPhase/>
   </vc-viewer>
