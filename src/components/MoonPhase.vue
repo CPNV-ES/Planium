@@ -47,8 +47,8 @@ const fetchMoonPhase = async (lat, lng) => {
   error.value = null;
 
   // credentials for authentication
-  const appId = "4894ccad-1e4b-485b-a0b9-82e2a3d74776"; // your app id
-  const appSecret = "8be664f3cdaaf766c3538271ac1c7299e8f79742fac62d8ec8c23e9540cb6446c08fdc4aa0711c368e29c1418be162144ff6e8a86d08aa05968164332d633e81e3514f80f99e000dd80cbb04d2b3ed980ed9b18039a1801fb9144d67176c341f691375435b248d06967c0e0d083657ee"; // your app secret
+  const appId = import.meta.env.VITE_MOON_PHASE_APP_ID; // your app id
+  const appSecret = import.meta.env.VITE_MOON_PHASE_APP_SECRET; // your app secret
 
   // check if missing credentials
   if (!appId || !appSecret) {
