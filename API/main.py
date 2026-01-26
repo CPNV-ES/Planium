@@ -42,8 +42,6 @@ def get_flights_endpoint(
 
     # Fetch flights for the given coordinates
     flights = get_flights(lat, long)
-    if flights.status_code == 429:
-        raise HTTPException(status_code=429, detail="Item not found")
     # If no data is found
     if not flights:
         return {"message": "No data found"}
