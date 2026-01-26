@@ -8,7 +8,7 @@ import Navigation from "@/components/navigation/Navigation.vue";
 import Terrain from "@/components/terrain/Terrain.vue";
 import Moon from "@/components/primitive/Moon.vue";
 import MoonPhase from "@/components/MoonPhase.vue";
-import MoonFocusButton from "@/components/primitive/MoonFocusButton.vue";
+import MoonCenterButton from "@/components/primitive/MoonCenterButton.vue";
 
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
