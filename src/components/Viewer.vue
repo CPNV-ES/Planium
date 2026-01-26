@@ -83,7 +83,7 @@ function onLocationSubmitted(e){
           <Navigation/>
       <Moon ref="moonComponentRef" />
       <MoonPhase v-bind="location" />
-      <MoonFocusButton
+      <MoonCenterButton
           :cesiumViewer="mapViewer"
           :cesium="cesium"
           :moonComponent="moonComponentRef"
