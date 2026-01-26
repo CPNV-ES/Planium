@@ -1,6 +1,6 @@
 <script setup>
 import Viewer from "@/components/Viewer.vue";
-import SMS from "@/components/notification/SMS.vue"
+import Email from "@/components/notification/Email.vue"
 import {ref} from "vue";
 // Check later to use the given inputs for location
 const lat = ref(0)
@@ -30,7 +30,7 @@ function send(){
 
           <button type="submit" @click="send()" class="btn btn-neutral mt-4">Find</button>
         </fieldset>
-        <SMS />
+        <Email />
       </div>
     <div id="cesiumContainer" class="flex w-[70%]">
        <Viewer v-bind="location" />
