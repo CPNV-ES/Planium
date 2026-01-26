@@ -1,8 +1,16 @@
 <template>
-  <div class="compass-container">
-    <div class="direction-info">
-      <div class="cardinal-direction">{{ cardinalDirection }}</div>
-      <div class="degree-value">{{ Math.round(heading) }}°</div>
+  <div class="absolute top-20 left-[50%] -translate-x-1/2 z-[1000] pointer-events-none">
+
+    <div class="bg-white/20 backdrop-blur-sm px-5 py-3 rounded-lg shadow-lg text-center min-w-[120px] border border-white/20">
+
+      <div class="font-bold text-lg text-slate-800 leading-tight">
+        {{ cardinalDirection }}
+      </div>
+
+      <div class="text-sm text-blue-500 font-medium">
+        {{ Math.round(heading) }}°
+      </div>
+
     </div>
   </div>
 </template>
