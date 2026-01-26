@@ -15,7 +15,7 @@ async function sendTestEmail() {
   }
 
   try{
-    const res = await fetch("/api/send-test-email", {
+    const res = await fetch("/API/send-test-email", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ email: email.value }),
