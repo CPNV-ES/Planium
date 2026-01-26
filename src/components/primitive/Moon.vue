@@ -141,7 +141,7 @@ onBeforeUnmount(() => {
 });
 // expose function to make it accessible outside component with
 // "moonComponentRef.value.onViewerReady({ Cesium, viewer})"
-defineExpose({ onViewerReady });
+defineExpose({ onViewerReady, moonPos });
 </script>
 
 <template>
