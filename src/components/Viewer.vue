@@ -78,9 +78,6 @@ function onLocationSubmitted(e){
       @ready="onViewerReady">
 
     <template v-if="isViewerReady">
-      <div class="absolute top-20 left-4 z-50 bg-transparent">
-      <CoordinateForm @submit="onLocationSubmitted"/>
-      </div>
           <Imagery/>
           <Terrain/>
           <Navigation/>
@@ -91,10 +88,11 @@ function onLocationSubmitted(e){
           :cesium="cesium"
           :moonComponent="moonComponentRef"
       />
+      <CameraController v-if="isViewerReady" :viewer="mapViewer" />
+      <CompassIndicator v-if="isViewerReady" :viewer="mapViewer" />
+      <CoordinateForm @submit="onLocationSubmitted"/>
     </template>
     <MoonPhase/>
   </vc-viewer>
-  <CameraController v-if="isViewerReady" :viewer="mapViewer" />
-  <CompassIndicator v-if="isViewerReady" :viewer="mapViewer" />
 </template>
 
