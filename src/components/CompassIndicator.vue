@@ -1,5 +1,5 @@
 <template>
-  <div class="absolute top-20 left-[50%] -translate-x-1/2 z-[1000] pointer-events-none">
+  <div class="absolute top-18 left-[50%] -translate-x-1/2 z-[1000] pointer-events-none">
 
     <div class="bg-white/20 backdrop-blur-sm px-5 py-3 rounded-lg shadow-lg text-center min-w-[120px] border border-white/20">
 
