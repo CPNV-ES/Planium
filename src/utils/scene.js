@@ -187,7 +187,7 @@ function addNextPostion(flight, entity, futureTime){
 
 function calculateMoonPlane(flight,viewer) {
     /*
-    Prompt à Claude :
+    Prompt to Claude :
     If I have a person (P), a plane (A), and the moon (L), I would like to know if the plane is in front of the moon
     from P's point of view. Please provide the formulas needed for this calculation.
 
