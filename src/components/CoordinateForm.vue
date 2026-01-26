@@ -30,8 +30,6 @@ function send(lat, lng){
 <template>
       <div class="bg-transparent max-w-sm shrink-0">
         <fieldset class="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
-          <legend class="fieldset-legend">Your position</legend>
-
           <label class="label">Latitude</label>
           <input v-model="lat" type="number" class="input" placeholder="42.161836383" />
 
