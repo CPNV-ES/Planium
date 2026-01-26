@@ -1,7 +1,7 @@
 <script setup>
 import {VcViewer} from "vue-cesium";
 import {nextTick, ref, watch} from "vue";
-import {loadPlanes, movePlanes, prepareScene, removeMoving} from "@/utils/scene.js";
+import {loadPlanes, updatePlanes, prepareScene, removeMoving} from "@/utils/scene.js";
 import Imagery from "@/components/imagery/Imagery.vue";
 import {flyTo} from "@/utils/camera.js";
 import Navigation from "@/components/navigation/Navigation.vue";
@@ -70,7 +70,7 @@ const onViewerReady = async ({Cesium, viewer}) => {
       isViewerReady.value = true
 
       setInterval(async () => {
-       await movePlanes(mapViewer.value)
+       await updatePlanes(mapViewer.value)
       }, 30000)
 
     } catch (error) {

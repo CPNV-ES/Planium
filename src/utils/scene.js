@@ -20,7 +20,7 @@ export async function prepareScene(scene){
     // Disable all default controls
     controller.enableRotate = false;
     controller.enableTranslate = false;
-    controller.enableZoom = false;
+    controller.enableZoom = true;
     controller.enableTilt = false;
     controller.enableLook = false;
 
@@ -147,7 +147,6 @@ async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id)
     const airplaneEntity = viewer.entities.add({
         id: id,
         availability: new Cesium.TimeIntervalCollection([ new Cesium.TimeInterval({ start: start, stop: stop }) ]),
-        // position: positionProperty,
         position: positionProperty,
         // Attach the 3D model instead of the green point.
         model: {uri: airplaneUri,minimumPixelSize: 100  },
@@ -157,8 +156,7 @@ async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id)
     });
 }
 
-export async function movePlanes(viewer){
-
+export async function updatePlanes(viewer){
     const data = await getFLights('http://localhost:8080/flights', {long:6.500465335539498 , lat: 46.82166054184684})
     const futureTime = Cesium.JulianDate.addSeconds(
         viewer.clock.currentTime,
@@ -166,22 +164,38 @@ export async function movePlanes(viewer){
         new Cesium.JulianDate()
     );
     if (data !== undefined && viewer.entities !== undefined) {
-        viewer.entities.values.forEach(entity => {
+        viewer.entities.values.forEach(async (entity) => {
             const flight = data.find(flight => flight.id === entity.id)
             if(flight !== undefined){
-                addNextPostion(flight, entity, futureTime)
-            }else{
+                await addNextPostion(flight, entity, futureTime)
+            }else if(entity.id !== 'Moon'){
                 viewer.entities.remove(entity)
             }
 
         })
 
+        await addNewPlanes(viewer, data)
     }
 }
 
-function addNextPostion(flight, entity, futureTime){
+async function addNextPostion(flight, entity, futureTime){
     const time = Cesium.JulianDate.now();
     const nextPos = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
     entity.position.addSample(futureTime, nextPos)
 }
+
+async function addNewPlanes(viewer, data){
+    const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
+    data.forEach(async (flight) => {
+        if (viewer.entities.values.find(entity => entity.id === flight.id) === undefined){
+            const positionProperty = new Cesium.SampledPositionProperty();
+            const position = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
+            positionProperty.addSample(viewer.clock.currentTime, position);
+            positionProperty.forwardExtrapolationType = Cesium.ExtrapolationType.HOLD
+            positionProperty.backwardExtrapolationType = Cesium.ExtrapolationType.HOLD
+            await loadModel(viewer, viewer.clock.currentTime, viewer.clock.stopTime, positionProperty, airplaneUri, flight.id)
+        }
+    })
+}
+
 
