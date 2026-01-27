@@ -1,3 +1,4 @@
+
 export async function getFLights(url, params = {}) {
     const searchParams = new URLSearchParams(params);
     try {
@@ -16,4 +17,26 @@ export async function getFLights(url, params = {}) {
     } catch (error) {
         console.error(error.message);
     }
+}
+
+export function getLocation() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error("Geolocation not supported"));
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const coords = {
+                    lat: position.coords.latitude,
+                    long: position.coords.longitude
+                };
+                resolve(coords);
+            },
+            (error) => {
+                reject(error);
+            }
+        );
+    });
 }
