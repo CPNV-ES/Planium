@@ -2,9 +2,9 @@ import {getFLights} from "@/utils/api.js";
 
 export async function prepareScene(scene){
     //------------Uncomment if performance is low---------------------
-    // scene.requestRenderMode = true; // Ne rendu que si nécessaire
+    // scene.requestRenderMode = true;
     // scene.maximumRenderTimeChange = Infinity;
-    // scene.globe.maximumScreenSpaceError = 24; // AUGMENTE CETTE VALEUR (16 à 32) pour réduire les requêtes
+    // scene.globe.maximumScreenSpaceError = 24;
     // scene.globe.tileCacheSize = 1000;
     // scene.globe.preloadAncestors = false;
     // scene.globe.loadingDescendantLimit = 20;
@@ -64,22 +64,13 @@ export async function prepareScene(scene){
 
 }
 
-export function addTilesetToScene(scene, tileset){
-    try {
-        scene.primitives.add(tileset);
-    }catch{
-        console.log("Error adding tileset")
-    }
-
-}
-
 //Prevent the user to move in the scene
 export function removeMoving(scene){
     scene.screenSpaceCameraController.enableRotate = false;
 }
-export async function loadPlanes(viewer){
+export async function loadPlanes(viewer, location){
     const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
-    const data = await getFLights('http://localhost:8080/flights', {long:6.500465335539498 , lat: 46.82166054184684})
+    const data = await getFLights('http://localhost:8080/flights', {long: location.long , lat: location.lat})
 
     if(data !== undefined) {
         const osmBuildings = await Cesium.createOsmBuildingsAsync();
@@ -155,26 +146,29 @@ async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id)
     });
 }
 
-export async function updatePlanes(viewer){
-    const data = await getFLights('http://localhost:8080/flights', {long:6.500465335539498 , lat: 46.82166054184684})
-    const futureTime = Cesium.JulianDate.addSeconds(
-        viewer.clock.currentTime,
-        31,
-        new Cesium.JulianDate()
-    );
-    if (data !== undefined && viewer.entities !== undefined) {
-        viewer.entities.values.forEach(async (entity) => {
-            const flight = data.find(flight => flight.id === entity.id)
-            if(flight !== undefined){
-                await addNextPostion(flight, entity, futureTime)
-            }else if(entity.id !== 'Moon'){
-                viewer.entities.remove(entity)
-            }
+export async function updatePlanes(viewer, location){
+    const data = await getFLights('http://localhost:8080/flights', {long:location.long , lat: location.lat})
+    if (data.length > 0){
+        const futureTime = Cesium.JulianDate.addSeconds(
+            viewer.clock.currentTime,
+            31,
+            new Cesium.JulianDate()
+        );
+        if (data !== undefined && viewer.entities !== undefined) {
+            viewer.entities.values.forEach(async (entity) => {
+                const flight = data.find(flight => flight.id === entity.id)
+                if(flight !== undefined){
+                    await addNextPostion(flight, entity, futureTime)
+                }else if(entity.id !== 'Moon'){
+                    viewer.entities.remove(entity)
+                }
 
-        })
+            })
 
-        await addNewPlanes(viewer, data)
+            await addNewPlanes(viewer, data)
+        }
     }
+
 }
 
 async function addNextPostion(flight, entity, futureTime){
