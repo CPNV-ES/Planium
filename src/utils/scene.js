@@ -16,17 +16,15 @@ export async function prepareScene(scene){
 
 
     const controller = scene.screenSpaceCameraController;
-
     // Disable all default controls
     controller.enableRotate = false;
     controller.enableTranslate = false;
-    controller.enableZoom = true;
+    controller.enableZoom = false;
     controller.enableTilt = false;
     controller.enableLook = false;
 
     controller.lookEventTypes = Cesium.CameraEventType.LEFT_DRAG;
     controller.enableLook = true;
-
     // source : https://cesium.com/learn/cesiumjs/ref-doc/Camera.html
     // source : https://developer.mozilla.org/en-US/docs/Web/API/WheelEvent
 
@@ -62,6 +60,7 @@ export async function prepareScene(scene){
         },
         { passive: false }
     );
+
 
 }
 
@@ -197,5 +196,4 @@ async function addNewPlanes(viewer, data){
         }
     })
 }
-
 
