@@ -197,4 +197,3 @@ async function addNewPlanes(viewer, data){
     })
 }
 
-
