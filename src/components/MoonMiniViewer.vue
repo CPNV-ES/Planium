@@ -19,13 +19,20 @@ onMounted(() => {
     fullscreenButton: false,
     geocoder: false,
     baseLayerPicker: false,
-    creditContainer: document.getElementById('div'), // hide credits
+    homeButton: false,
+    infoBox: false,
+    selectionIndicator: false,
+    sceneModePicker: false,
+    creditContainer: document.createElement('div'), // hide credits
   })
 
   miniViewer.scene.backgroundColor = props.Cesium.Color.BLACK
   miniViewer.scene.logarithmicDepthBuffer = true
-
   miniViewer.scene.light = props.mainViewer.scene.light
+
+  miniViewer.scene.screenSpaceCameraController.enableRotate = false;
+  miniViewer.scene.screenSpaceCameraController.enableTranslate = false;
+  miniViewer.scene.screenSpaceCameraController.enableZoom = false;
 
   props.mainViewer.camera.changed.addEventListener(updateMiniView)
 })
