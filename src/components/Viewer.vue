@@ -9,6 +9,7 @@ import Terrain from "@/components/terrain/Terrain.vue";
 import Moon from "@/components/primitive/Moon.vue";
 import MoonPhase from "@/components/MoonPhase.vue";
 import MoonCenterButton from "@/components/primitive/MoonCenterButton.vue";
+import MoonMiniViewer from "@/components/MoonMiniViewer.vue"
 import CameraController from './CameraController.vue'
 import CompassIndicator from '@/components/CompassIndicator.vue'
 import CoordinateForm from "@/components/CoordinateForm.vue";
@@ -88,11 +89,16 @@ function onLocationSubmitted(e){
           :cesium="cesium"
           :moonComponent="moonComponentRef"
       />
+      <MoonMiniViewer
+          v-if="cesium && mapViewer"
+          :mainViewer="mapViewer"
+          :Cesium="cesium"
+          :moonPos="moonComponentRef?.moonPos"
+      />
       <CameraController v-if="isViewerReady" :viewer="mapViewer" />
       <CompassIndicator v-if="isViewerReady" :viewer="mapViewer" />
       <CoordinateForm @submit="onLocationSubmitted"/>
     </template>
-    <MoonPhase/>
   </vc-viewer>
 </template>
 
