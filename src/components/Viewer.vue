@@ -70,8 +70,8 @@ const onViewerReady = async ({Cesium, viewer}) => {
 
 async function onLocationSubmitted(e){
   flyTo(mapViewer.value.camera, cesium.value, e.lat, e.long)
-  await updatePlanes(mapViewer.value, location.value)
   location.value = {lat: e.lat, long: e.long}
+  await updatePlanes(mapViewer.value, location.value)
 }
 
 </script>
