@@ -18,10 +18,10 @@ const isViewerReady = ref(false)
 const cesiumToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
 const mapViewer = ref(null)
 const cesium = ref(null)
-const location = {
-  lng: undefined,
-  lat: undefined
-}
+const location = ref({
+  lat: undefined,
+  long: undefined
+})
 
 const moonComponentRef = ref(null)
 
