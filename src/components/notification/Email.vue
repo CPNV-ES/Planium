@@ -2,23 +2,23 @@
 import { ref } from "vue";
 
 const emailCheck = ref(false); // flag: is "Receive..." box checked?
-const email = ref(""); // stores user's email
+const user_email = ref(""); // stores user's email
 
 async function sendTestEmail() {
   if (!emailCheck.value) {
     alert("Please check the box to receive email notifications.");
     return;
   }
-  if (!email.value) {
+  if (!user_email.value) {
     alert("Please enter a valid email address.");
     return;
   }
 
   try{
-    const res = await fetch("/api/send-test-email", {
+    const res = await fetch("http://localhost:8080/api/send-test-email", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ email: email.value }),
+      body: JSON.stringify({ user_email: user_email.value }),
     });
 
     if (!res.ok) throw new Error("Failed to send test email");
@@ -45,7 +45,7 @@ async function sendTestEmail() {
   <!-- email address input shown if box checked -->
   <input
       v-if="emailCheck"
-      v-model="email"
+      v-model="user_email"
       type="email"
       placeholder="Email address : example@email.com"
       class="input"
