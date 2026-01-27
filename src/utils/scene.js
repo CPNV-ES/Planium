@@ -2,9 +2,9 @@ import {getFLights} from "@/utils/api.js";
 
 export async function prepareScene(scene){
     //------------Uncomment if performance is low---------------------
-    // scene.requestRenderMode = true; // Ne rendu que si nécessaire
+    // scene.requestRenderMode = true;
     // scene.maximumRenderTimeChange = Infinity;
-    // scene.globe.maximumScreenSpaceError = 24; // AUGMENTE CETTE VALEUR (16 à 32) pour réduire les requêtes
+    // scene.globe.maximumScreenSpaceError = 24;
     // scene.globe.tileCacheSize = 1000;
     // scene.globe.preloadAncestors = false;
     // scene.globe.loadingDescendantLimit = 20;
@@ -14,8 +14,8 @@ export async function prepareScene(scene){
         cameraUnderground: false
     }
 
-    const controller = scene.screenSpaceCameraController;
 
+    const controller = scene.screenSpaceCameraController;
     // Disable all default controls
     controller.enableRotate = false;
     controller.enableTranslate = false;
@@ -25,15 +25,42 @@ export async function prepareScene(scene){
 
     controller.lookEventTypes = Cesium.CameraEventType.LEFT_DRAG;
     controller.enableLook = true;
+    // source : https://cesium.com/learn/cesiumjs/ref-doc/Camera.html
+    // source : https://developer.mozilla.org/en-US/docs/Web/API/WheelEvent
 
-}
+    // minimum FOV degrees in radian
+    const MIN_FOV = Cesium.Math.toRadians(5);
 
-export function addTilesetToScene(scene, tileset){
-    try {
-        scene.primitives.add(tileset);
-    }catch{
-        console.log("Error adding tileset")
-    }
+    // maximum FOV degrees in radian
+    const MAX_FOV = Cesium.Math.toRadians(100);
+
+    // increment in radian for each step of the mouse
+    const STEP = Cesium.Math.toRadians(2);
+
+    const canvas = scene.canvas;
+
+    // listen for mouse wheel events
+    canvas.addEventListener(
+        "wheel",
+        (event) => {
+            event.preventDefault();
+
+            const camera = scene.camera;
+            let fov = camera.frustum.fov;
+
+            // increment the FOV
+            fov += event.deltaY > 0 ? STEP : -STEP;
+
+            // check the limits
+            camera.frustum.fov = Cesium.Math.clamp(
+                fov,
+                MIN_FOV,
+                MAX_FOV
+            );
+        },
+        { passive: false }
+    );
+
 
 }
 
@@ -41,9 +68,9 @@ export function addTilesetToScene(scene, tileset){
 export function removeMoving(scene){
     scene.screenSpaceCameraController.enableRotate = false;
 }
-export async function loadPlanes(viewer){
+export async function loadPlanes(viewer, location){
     const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
-    const data = await getFLights('http://localhost:8080/flights', {long:6.500465335539498 , lat: 46.82166054184684})
+    const data = await getFLights('http://localhost:8080/flights', {long: location.long , lat: location.lat})
 
     if(data !== undefined) {
         const osmBuildings = await Cesium.createOsmBuildingsAsync();
@@ -110,7 +137,6 @@ async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id)
     const airplaneEntity = viewer.entities.add({
         id: id,
         availability: new Cesium.TimeIntervalCollection([ new Cesium.TimeInterval({ start: start, stop: stop }) ]),
-        // position: positionProperty,
         position: positionProperty,
         // Attach the 3D model instead of the green point.
         model: {uri: airplaneUri,minimumPixelSize: 100  },
@@ -120,31 +146,48 @@ async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id)
     });
 }
 
-export async function movePlanes(viewer){
+export async function updatePlanes(viewer, location){
+    const data = await getFLights('http://localhost:8080/flights', {long:location.long , lat: location.lat})
+    if (data.length > 0){
+        const futureTime = Cesium.JulianDate.addSeconds(
+            viewer.clock.currentTime,
+            31,
+            new Cesium.JulianDate()
+        );
+        if (data !== undefined && viewer.entities !== undefined) {
+            viewer.entities.values.forEach(async (entity) => {
+                const flight = data.find(flight => flight.id === entity.id)
+                if(flight !== undefined){
+                    await addNextPostion(flight, entity, futureTime)
+                }else if(entity.id !== 'Moon'){
+                    viewer.entities.remove(entity)
+                }
 
-    const data = await getFLights('http://localhost:8080/flights', {long:6.500465335539498 , lat: 46.82166054184684})
-    const futureTime = Cesium.JulianDate.addSeconds(
-        viewer.clock.currentTime,
-        31,
-        new Cesium.JulianDate()
-    );
-    if (data !== undefined && viewer.entities !== undefined) {
-        viewer.entities.values.forEach(entity => {
-            const flight = data.find(flight => flight.id === entity.id)
-            if(flight !== undefined){
-                addNextPostion(flight, entity, futureTime)
-            }else{
-                viewer.entities.remove(entity)
-            }
+            })
 
-        })
-
+            await addNewPlanes(viewer, data)
+        }
     }
+
 }
 
-function addNextPostion(flight, entity, futureTime){
+async function addNextPostion(flight, entity, futureTime){
     const time = Cesium.JulianDate.now();
     const nextPos = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
     entity.position.addSample(futureTime, nextPos)
+}
+
+async function addNewPlanes(viewer, data){
+    const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
+    data.forEach(async (flight) => {
+        if (viewer.entities.values.find(entity => entity.id === flight.id) === undefined){
+            const positionProperty = new Cesium.SampledPositionProperty();
+            const position = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
+            positionProperty.addSample(viewer.clock.currentTime, position);
+            positionProperty.forwardExtrapolationType = Cesium.ExtrapolationType.HOLD
+            positionProperty.backwardExtrapolationType = Cesium.ExtrapolationType.HOLD
+            await loadModel(viewer, viewer.clock.currentTime, viewer.clock.stopTime, positionProperty, airplaneUri, flight.id)
+        }
+    })
 }
 

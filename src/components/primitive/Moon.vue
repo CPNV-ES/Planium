@@ -141,13 +141,14 @@ onBeforeUnmount(() => {
 });
 // expose function to make it accessible outside component with
 // "moonComponentRef.value.onViewerReady({ Cesium, viewer})"
-defineExpose({ onViewerReady });
+defineExpose({ onViewerReady, moonPos });
 </script>
 
 <template>
   <!-- render Moon only if there's a valid position -->
   <vc-entity
       v-if="moonPos"
+      :id="'Moon'"
       :position="moonPos"
       :point="point"
       :label="label"

@@ -1,45 +1,30 @@
 <script setup>
 import {VcViewer} from "vue-cesium";
-import {nextTick, ref, watch} from "vue";
-import {loadPlanes, movePlanes, prepareScene, removeMoving} from "@/utils/scene.js";
+import {nextTick, ref} from "vue";
+import {loadPlanes, updatePlanes, prepareScene, removeMoving} from "@/utils/scene.js";
 import Imagery from "@/components/imagery/Imagery.vue";
 import {flyTo} from "@/utils/camera.js";
 import Navigation from "@/components/navigation/Navigation.vue";
 import Terrain from "@/components/terrain/Terrain.vue";
 import Moon from "@/components/primitive/Moon.vue";
 import MoonPhase from "@/components/MoonPhase.vue";
+import MoonCenterButton from "@/components/primitive/MoonCenterButton.vue";
 import CameraController from './CameraController.vue'
 import CompassIndicator from '@/components/CompassIndicator.vue'
+import CoordinateForm from "@/components/CoordinateForm.vue";
+import {getLocation} from "@/utils/api.js";
 
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
 const cesiumToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
 const mapViewer = ref(null)
 const cesium = ref(null)
-const location = defineProps({
-  lng: undefined,
-  lat: undefined
+const location = ref({
+  lat: undefined,
+  long: undefined
 })
 
 const moonComponentRef = ref(null)
-
-watch(
-    [() => location.lat, () => location.lng],
-    ([newLat, newLng]) => {
-      if (mapViewer.value && newLat !== 0 && newLng !== 0) {
-        flyTo(mapViewer.value.camera, cesium.value, newLat, newLng)
-      } else {
-        console.error(
-            "Unable to update camera position: viewer is not ready or location is invalid.",
-            {
-              viewerReady: !!mapViewer.value,
-              lat: newLat,
-              lng: newLng
-            }
-        );
-      }
-    }
-)
 
 
 const onViewerReady = async ({Cesium, viewer}) => {
@@ -51,25 +36,32 @@ const onViewerReady = async ({Cesium, viewer}) => {
     try {
       if (Cesium) {
         await prepareScene(viewer.scene)
-        // removeMoving(viewer.scene)
+        removeMoving(viewer.scene)
       }
+
       viewer.scene.farToNearRatio = 1000000;
       viewer.scene.logarithmicDepthBuffer = true;
       await nextTick()
+
       if (moonComponentRef.value){
         console.log("Found Moon Component, initializing...");
         moonComponentRef.value.onViewerReady({Cesium, viewer})
       } else {
         console.error("Moon Component Ref is NULL. Check if Moon is inside a v-if.");
       }
-      flyTo(viewer.camera, Cesium, location.lat, location.lng)
+
+      location.value = await getLocation(viewer)
       mapViewer.value = viewer
       cesium.value = Cesium
-      await loadPlanes(mapViewer.value)
+
+      flyTo(viewer.camera, Cesium, location.value.lat, location.value.long)
+      await loadPlanes(mapViewer.value, location.value)
       isViewerReady.value = true
 
       setInterval(async () => {
-       await movePlanes(mapViewer.value)
+        if (mapViewer.value !== undefined){
+          await updatePlanes(mapViewer.value, location.value)
+        }
       }, 30000)
 
     } catch (error) {
@@ -78,7 +70,11 @@ const onViewerReady = async ({Cesium, viewer}) => {
   }
 };
 
-
+async function onLocationSubmitted(e){
+  flyTo(mapViewer.value.camera, cesium.value, e.lat, e.long)
+  location.value = {lat: e.lat, long: e.long}
+  await updatePlanes(mapViewer.value, location.value)
+}
 
 </script>
 
@@ -90,16 +86,23 @@ const onViewerReady = async ({Cesium, viewer}) => {
       ref="viewerRef"
       :access-token="cesiumToken"
       @ready="onViewerReady">
+
     <template v-if="isViewerReady">
           <Imagery/>
           <Terrain/>
           <Navigation/>
       <Moon ref="moonComponentRef" />
       <MoonPhase v-bind="location" />
+      <MoonCenterButton
+          :cesiumViewer="mapViewer"
+          :cesium="cesium"
+          :moonComponent="moonComponentRef"
+      />
+      <CameraController v-if="isViewerReady" :viewer="mapViewer" />
+      <CompassIndicator v-if="isViewerReady" :viewer="mapViewer" />
+      <CoordinateForm @submit="onLocationSubmitted"/>
     </template>
     <MoonPhase/>
   </vc-viewer>
-  <CameraController v-if="isViewerReady" :viewer="mapViewer" />
-  <CompassIndicator v-if="isViewerReady" :viewer="mapViewer" />
 </template>
 

@@ -4,7 +4,7 @@
       min="-100"
       max="100"
       v-model.number="value"
-      class="fixed right-4 top-4 w-65 h-4 bg-gray-600 rounded-lg"
+      class="absolute right-4 top-18 w-65 h-4 z-1000 bg-gray-600 rounded-lg"
   />
 </template>
 

@@ -1,36 +1,51 @@
 <script setup>
-import {ref, onMounted, watch} from 'vue';
+import {ref, onMounted, watch, computed} from 'vue';
 import {flyTo} from "@/utils/camera.js";
 
 const moonImageUrl = ref(null); // stores the final processed image URL
-const isLoading = ref(true); // boolean flag to track the loading state of requests
+const isLoading = ref(false); // boolean flag to track the loading state of requests
+const hasRequested = ref(false); // boolean flag to indicate if at least one request has been triggered
 const error = ref(null); // exception messages container
 const location = defineProps({ // user's location ( CoordinateForm -> Viewer -> MoonPhase))
-  lng: undefined,
+  long: undefined,
   lat: undefined
 })
 
+// true when valid geographic location has been provided
+const hasValidLocation = computed(() =>
+    typeof location.lat === "number" &&
+    typeof location.long === "number"
+);
+
+// ensure fetching the moon phase api only once when location is updated
+// prevents duplicate API calls
+let hasFetched = false;
+
+// watcher updates moon phase when lat and lng are updated
 watch(
-    [() => location.lat, () => location.lng],
-    ([newLat, newLng]) => {
-      if (newLat !== 0 && newLng !== 0) {
-        fetchMoonPhase(newLat, newLng);
-      } else {
-        console.error(
-            "Unable to update moon phase: location is invalid.",
-            {
-              lat: newLat,
-              lng: newLng
-            }
-        );
-      }
-    }
-)
+    () => [location.lat, location.long],
+    ([lat, lng]) => {
+      if (
+          typeof lat !== "number" ||
+          typeof lng !== "number"
+      ) return;
+
+      console.log("[MoonPhase] Auto-fetching moon phase");
+      fetchMoonPhase(lat, lng);
+    },
+    { immediate: true } // runs also when page is reloaded
+);
 
 const fetchMoonPhase = async (lat, lng) => {
   /* Fetch Moon's phase from AstronomyAPI
   * documentation: https://docs.astronomyapi.com/endpoints/studio/moon-phase
   * */
+  console.log("[MoonPhase] Fetching moon phase…");
+
+  hasRequested.value = true;
+  isLoading.value = true;
+  error.value = null;
+
   // credentials for authentication
   const appId = import.meta.env.VITE_MOON_PHASE_APP_ID; // your app id
   const appSecret = import.meta.env.VITE_MOON_PHASE_APP_SECRET; // your app secret
@@ -39,6 +54,7 @@ const fetchMoonPhase = async (lat, lng) => {
   if (!appId || !appSecret) {
     error.value = "API Credentials missing";
     isLoading.value = false;
+    console.error("[MoonPhase] Missing API credentials");
     return;
   }
 
@@ -50,6 +66,12 @@ const fetchMoonPhase = async (lat, lng) => {
   // new Date().toISOString() returns standard timestamp
   // split('T')[0] returns "YYYY-MM-DD" part
   const today = new Date().toISOString().split('T')[0];
+
+  console.log("[MoonPhase] Request parameters:", {
+    lat,
+    long: lng,
+    date: today
+  });
 
   try {
     // POST request to AstronomyAPI
@@ -83,43 +105,64 @@ const fetchMoonPhase = async (lat, lng) => {
       })
     });
 
+    console.debug("[MoonPhase] API response status:", response.status);
+
     // validate server's response
     if (!response.ok) throw new Error("Failed to generate moon image");
 
     // json parsing
     const result = await response.json();
+
+    console.debug("[MoonPhase] API response payload:", result);
     // update image value (assign new image to reactive reference)
     moonImageUrl.value = result.data.imageUrl;
+
+    if (!moonImageUrl.value) {
+      console.warn("[MoonPhase] No image URL returned from API");
+    } else {
+      console.info("[MoonPhase] Moon image updated successfully");
+    }
   } catch (err) {
     // store error message catched
     error.value = err.message;
+    console.error("[MoonPhase] Error fetching moon phase:", err);
   } finally {
     // always exit loading state (set loading to false regardless of request result)
     isLoading.value = false;
+    console.debug("[MoonPhase] Loading finished");
   }
 };
 
 </script>
 
 <template>
-  <div class="absolute bottom-6 left-6 z-[1000] pointer-events-auto">
+  <div
+      v-if="isLoading || error || moonImageUrl || hasRequested"
+      class="absolute bottom-6 left-6 z-[1000] pointer-events-auto"
+  >
     <div class="bg-black/70 backdrop-blur-md border border-white/20 p-2 rounded-xl shadow-2xl transition-all hover:scale-105 duration-300 w-40">
 
       <div v-if="isLoading" class="flex flex-col items-center justify-center h-48 space-y-2">
         <div class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-        <span class="text-[10px] text-white/50 uppercase tracking-widest">Loading Moon</span>
+        <span class="text-[10px] text-white/50 uppercase tracking-widest">
+        Loading Moon
+      </span>
       </div>
 
       <div v-else-if="error" class="text-[10px] text-red-400 p-2 text-center">
         {{ error }}
       </div>
 
-      <div v-else class="relative overflow-hidden rounded-lg">
+      <div v-else-if="moonImageUrl" class="relative overflow-hidden rounded-lg">
         <img
             :src="moonImageUrl"
             alt="Current Moon Phase"
             class="w-full h-auto block"
         />
+      </div>
+
+      <div v-else class="text-[10px] text-white/40 text-center p-2">
+        No moon data available
       </div>
 
     </div>
