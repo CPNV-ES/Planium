@@ -177,6 +177,67 @@ async function addNextPostion(flight, entity, futureTime){
     entity.position.addSample(futureTime, nextPos)
 }
 
+function determinatePlane(flight) {
+/*
+    Prompt to Claude :
+    I want to predict the geographical position of an aircraft in 30 seconds.
+
+    Available data:
+    - Current position: latitude (degrees), longitude (degrees), altitude (meters)
+    - Ground speed: m/s
+    - Heading: degrees (0° = North, 90° = East)
+    - Vertical speed: m/s
+
+    Provide the complete mathematical formulas to calculate the new latitude, longitude, and altitude,
+    taking into account the curvature of the Earth.
+    */
+    const long = flight.long
+    const lat = flight.lat
+    const alt = flight.alt
+    const speed = flight.velocity
+    const heading = flight.heading
+    const vertical_rate = flight.vertical_rate
+
+    const pi = Math.PI;
+
+    // prediction time in seconds
+    const delta_time = 30;
+
+    // Convert to radians
+    const long_rad = long * pi / 180
+    const lat_rad = lat * pi / 180
+    const heading_rad = heading * pi / 180
+
+    const earth_radius = 6371000  // meters
+
+    // Horizontal distance traveled
+    const distance = speed * delta_time
+
+    // Calculate new latitude
+    const new_lat_rad = Math.asin(
+        Math.sin(lat_rad) * Math.cos(distance / earth_radius) +
+        Math.cos(lat_rad) * Math.sin(distance / earth_radius) * Math.cos(heading_rad)
+    )
+
+    // Calculate new longitude
+    const delta_long = Math.atan2(
+        Math.sin(heading_rad) * Math.sin(distance / earth_radius) * Math.cos(lat_rad),
+        Math.cos(distance / earth_radius) - Math.sin(lat_rad) * Math.sin(new_lat_rad)
+    )
+    const new_long_rad = long_rad + delta_long
+
+    // Calculate new altitude
+    const new_alt = alt + vertical_rate * delta_time
+
+    // Convert result back to degrees
+    const new_lat = new_lat_rad * 180 / pi
+    const new_long = new_long_rad * 180 / pi
+
+    // Return predicted position
+    return Cesium.Cartesian3.fromDegrees(new_long, new_lat, new_alt);
+}
+
+
 async function addNewPlanes(viewer, data){
     const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
     data.forEach(async (flight) => {
