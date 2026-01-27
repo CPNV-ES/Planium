@@ -1,6 +1,6 @@
 <script setup>
 import {VcViewer} from "vue-cesium";
-import {nextTick, ref, watch} from "vue";
+import {nextTick, ref} from "vue";
 import {loadPlanes, updatePlanes, prepareScene, removeMoving} from "@/utils/scene.js";
 import Imagery from "@/components/imagery/Imagery.vue";
 import {flyTo} from "@/utils/camera.js";
@@ -12,6 +12,7 @@ import MoonCenterButton from "@/components/primitive/MoonCenterButton.vue";
 import CameraController from './CameraController.vue'
 import CompassIndicator from '@/components/CompassIndicator.vue'
 import CoordinateForm from "@/components/CoordinateForm.vue";
+import {getLocation} from "@/utils/api.js";
 
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
@@ -35,25 +36,30 @@ const onViewerReady = async ({Cesium, viewer}) => {
     try {
       if (Cesium) {
         await prepareScene(viewer.scene)
-        // removeMoving(viewer.scene)
+        removeMoving(viewer.scene)
       }
+
       viewer.scene.farToNearRatio = 1000000;
       viewer.scene.logarithmicDepthBuffer = true;
       await nextTick()
+
       if (moonComponentRef.value){
         console.log("Found Moon Component, initializing...");
         moonComponentRef.value.onViewerReady({Cesium, viewer})
       } else {
         console.error("Moon Component Ref is NULL. Check if Moon is inside a v-if.");
       }
-      flyTo(viewer.camera, Cesium, location.lat, location.lng)
+
+      location.value = await getLocation(viewer)
       mapViewer.value = viewer
       cesium.value = Cesium
-      await loadPlanes(mapViewer.value)
+
+      flyTo(viewer.camera, Cesium, location.value.lat, location.value.long)
+      await loadPlanes(mapViewer.value, location.value)
       isViewerReady.value = true
 
       setInterval(async () => {
-       await updatePlanes(mapViewer.value)
+       await updatePlanes(mapViewer.value, location.value)
       }, 30000)
 
     } catch (error) {
@@ -62,8 +68,10 @@ const onViewerReady = async ({Cesium, viewer}) => {
   }
 };
 
-function onLocationSubmitted(e){
-  flyTo(mapViewer.value.camera, cesium.value, e.lat, e.lng)
+async function onLocationSubmitted(e){
+  flyTo(mapViewer.value.camera, cesium.value, e.lat, e.long)
+  await updatePlanes(mapViewer.value, location.value)
+  location.value = {lat: e.lat, long: e.long}
 }
 
 </script>

@@ -78,9 +78,9 @@ export function addTilesetToScene(scene, tileset){
 export function removeMoving(scene){
     scene.screenSpaceCameraController.enableRotate = false;
 }
-export async function loadPlanes(viewer){
+export async function loadPlanes(viewer, location){
     const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
-    const data = await getFLights('http://localhost:8080/flights', {long:6.500465335539498 , lat: 46.82166054184684})
+    const data = await getFLights('http://localhost:8080/flights', {long: location.long , lat: location.lat})
 
     if(data !== undefined) {
         const osmBuildings = await Cesium.createOsmBuildingsAsync();
@@ -156,26 +156,29 @@ async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id)
     });
 }
 
-export async function updatePlanes(viewer){
-    const data = await getFLights('http://localhost:8080/flights', {long:6.500465335539498 , lat: 46.82166054184684})
-    const futureTime = Cesium.JulianDate.addSeconds(
-        viewer.clock.currentTime,
-        31,
-        new Cesium.JulianDate()
-    );
-    if (data !== undefined && viewer.entities !== undefined) {
-        viewer.entities.values.forEach(async (entity) => {
-            const flight = data.find(flight => flight.id === entity.id)
-            if(flight !== undefined){
-                await addNextPostion(flight, entity, futureTime)
-            }else if(entity.id !== 'Moon'){
-                viewer.entities.remove(entity)
-            }
+export async function updatePlanes(viewer, location){
+    const data = await getFLights('http://localhost:8080/flights', {long:location.long , lat: location.lat})
+    if (data.length > 0){
+        const futureTime = Cesium.JulianDate.addSeconds(
+            viewer.clock.currentTime,
+            31,
+            new Cesium.JulianDate()
+        );
+        if (data !== undefined && viewer.entities !== undefined) {
+            viewer.entities.values.forEach(async (entity) => {
+                const flight = data.find(flight => flight.id === entity.id)
+                if(flight !== undefined){
+                    await addNextPostion(flight, entity, futureTime)
+                }else if(entity.id !== 'Moon'){
+                    viewer.entities.remove(entity)
+                }
 
-        })
+            })
 
-        await addNewPlanes(viewer, data)
+            await addNewPlanes(viewer, data)
+        }
     }
+
 }
 
 async function addNextPostion(flight, entity, futureTime){

@@ -114,7 +114,6 @@ const fetchMoonPhase = async (lat, lng) => {
     const result = await response.json();
 
     console.debug("[MoonPhase] API response payload:", result);
-
     // update image value (assign new image to reactive reference)
     moonImageUrl.value = result.data.imageUrl;
 
