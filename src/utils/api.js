@@ -11,7 +11,6 @@ export async function getFLights(url, params = {}) {
         }
 
         const result = await response.json();
-        console.log(result);
 
         return result
     } catch (error) {
