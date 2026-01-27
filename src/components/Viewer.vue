@@ -59,7 +59,9 @@ const onViewerReady = async ({Cesium, viewer}) => {
       isViewerReady.value = true
 
       setInterval(async () => {
-       await updatePlanes(mapViewer.value, location.value)
+        if (mapViewer.value !== undefined){
+          await updatePlanes(mapViewer.value, location.value)
+        }
       }, 30000)
 
     } catch (error) {
