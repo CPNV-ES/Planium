@@ -62,7 +62,7 @@ const onViewerReady = async ({Cesium, viewer}) => {
         if (mapViewer.value !== undefined){
           await updatePlanes(mapViewer.value, location.value)
         }
-      }, 30000)
+      }, 29000)
 
     } catch (error) {
       console.error("Error loading tileset:", error);
