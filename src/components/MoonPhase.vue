@@ -7,14 +7,14 @@ const isLoading = ref(false); // boolean flag to track the loading state of requ
 const hasRequested = ref(false); // boolean flag to indicate if at least one request has been triggered
 const error = ref(null); // exception messages container
 const location = defineProps({ // user's location ( CoordinateForm -> Viewer -> MoonPhase))
-  lng: undefined,
+  long: undefined,
   lat: undefined
 })
 
 // true when valid geographic location has been provided
 const hasValidLocation = computed(() =>
     typeof location.lat === "number" &&
-    typeof location.lng === "number"
+    typeof location.long === "number"
 );
 
 // ensure fetching the moon phase api only once when location is updated
@@ -23,7 +23,7 @@ let hasFetched = false;
 
 // watcher updates moon phase when lat and lng are updated
 watch(
-    () => [location.lat, location.lng],
+    () => [location.lat, location.long],
     ([lat, lng]) => {
       if (
           typeof lat !== "number" ||
@@ -69,7 +69,7 @@ const fetchMoonPhase = async (lat, lng) => {
 
   console.log("[MoonPhase] Request parameters:", {
     lat,
-    lng,
+    long: lng,
     date: today
   });
 
@@ -114,7 +114,6 @@ const fetchMoonPhase = async (lat, lng) => {
     const result = await response.json();
 
     console.debug("[MoonPhase] API response payload:", result);
-
     // update image value (assign new image to reactive reference)
     moonImageUrl.value = result.data.imageUrl;
 

@@ -56,7 +56,7 @@ def get_flights(user_lat, user_long):
         "origin_country": country of origin of the plane
         "lat": plane latitude (°) -90 to 90
         "long": plane longitude (°) -180 to 180
-        "alt": plane altitude (km)
+        "alt": plane altitude (m)
         "velocity": plane speed (m/s)
         "heading": plane heading (°) 0 to 360, true north
         "vertical_rate": Vertical speed (m/s)
