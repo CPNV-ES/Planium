@@ -1,4 +1,6 @@
 import {getFLights} from "@/utils/api.js";
+import fs from 'fs';
+import path from 'path';
 
 export async function prepareScene(scene){
     //------------Uncomment if performance is low---------------------
@@ -175,6 +177,24 @@ async function addNextPostion(flight, entity, futureTime){
     const time = Cesium.JulianDate.now();
     const nextPos = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
     entity.position.addSample(futureTime, nextPos)
+}
+
+function writeToLogFile(logEntry) {
+    fs.mkdir('./Logs', (err) => {
+        if (err) {
+            console.log('The folder already existed');
+        }
+        console.log('The folder has been created');
+    });
+
+    const logFilePath = path.join("./Logs", "log.txt");
+    const formattedLogEntry = `[${new Date().toISOString()}] ${logEntry}\n`;
+
+    fs.appendFile(logFilePath,formattedLogEntry, (err) => {
+        if (err) {
+            console.log('Error writting to log file', err);
+        }
+    });
 }
 
 
