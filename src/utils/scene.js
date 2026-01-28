@@ -147,35 +147,58 @@ async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id)
 }
 
 export async function updatePlanes(viewer, location){
-    debugger
+
     const data = await getFLights('http://localhost:8080/flights', {long:location.long , lat: location.lat})
     if (data.length > 0){
         const futureTime = Cesium.JulianDate.addSeconds(
             viewer.clock.currentTime,
-            31,
+            30,
             new Cesium.JulianDate()
         );
         if (data !== undefined && viewer.entities !== undefined) {
             viewer.entities.values.forEach(async (entity) => {
-                const flight = data.find(flight => entity.id.includes(flight.id))
-                if(flight !== undefined){
-                    await addNextPostion(flight, entity, futureTime)
-                }else if(entity.id.includes('plane') ){
-                    viewer.entities.remove(entity)
-                }
-
-            })
+                    const flight = data.find(flight => entity.id.includes(flight.id))
+                    if(flight !== undefined){
+                        await addNextPostion(flight, entity, futureTime)
+                    }else if(entity.id.includes('plane') ){
+                        viewer.entities.remove(entity)
+                    }
+                })
+            }
 
             await addNewPlanes(viewer, data)
         }
     }
 
+
+async function addNextPostion(position, entity, futureTime){
+    const time = Cesium.JulianDate.now();
+    const nextPos = Cesium.Cartesian3.fromDegrees(position.long, position.lat, position.alt)
+    entity.position.addSample(futureTime, nextPos)
 }
 
-async function addNextPostion(flight, entity, futureTime){
-    const time = Cesium.JulianDate.now();
-    const nextPos = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
-    entity.position.addSample(futureTime, nextPos)
+function checkLastOccurence(flight){
+    const isEven = flight.position._property._times % 2 === 0
+    return isEven
+}
+
+function calculateVelocity(posAncienne, posNouvelle, timeDelta) {
+    // 1. Soustraire les positions pour obtenir le vecteur direction
+    // vecteur = posNouvelle - posAncienne
+    const direction = Cesium.Cartesian3.subtract(
+        posNouvelle,
+        posAncienne,
+        new Cesium.Cartesian3()
+    );
+
+    // 2. Diviser par le temps pour obtenir la vitesse par seconde (m/s)
+    const velocityVector = Cesium.Cartesian3.divideByScalar(
+        direction,
+        timeDelta,
+        new Cesium.Cartesian3()
+    );
+
+    return velocityVector;
 }
 
 function calculateMoonPlane(flight,viewer) {
