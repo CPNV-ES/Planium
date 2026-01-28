@@ -1,6 +1,6 @@
 <script setup>
 import {onMounted, onUnmounted, ref, watch} from 'vue';
-import {loadPlanes} from "@/utils/scene.js";
+import {loadPlanes, updatePlanes} from "@/utils/scene.js";
 
 const props = defineProps({
   mainViewer: Object, // pass main Cesium.Viewer object
@@ -12,8 +12,34 @@ const props = defineProps({
 const miniViewerContainer = ref(null);
 let miniViewer = null;
 
+const moonRadius = 1737400 // meters
+
+function updateMiniView() {
+  if (!props.moonPos || !miniViewer) return
+
+  const Cesium = props.Cesium
+  const mainCamera = props.mainViewer.camera
+
+  const moonDirection = Cesium.Cartesian3.subtract(props.moonPos, mainCamera.position, new Cesium.Cartesian3());
+  const distanceToMoon = Cesium.Cartesian3.magnitude(moonDirection);
+  Cesium.Cartesian3.normalize(moonDirection, moonDirection);
+
+  miniViewer.camera.setView({
+    destination: mainCamera.position,
+    orientation: {
+      direction: moonDirection,
+      up: mainCamera.up
+    }
+  });
+
+  const moonAngularSize = 2 * Math.atan(moonRadius / distanceToMoon)
+  miniViewer.camera.frustum.fov = moonAngularSize * 15 // zoom width in Moons (diameter)
+}
+
 onMounted(async () => {
-  miniViewer = new props.Cesium.Viewer(miniViewerContainer.value, {
+  const { Cesium, mainViewer } = props;
+
+  miniViewer = new Cesium.Viewer(miniViewerContainer.value, {
     sceneMode: props.Cesium.SceneMode.SCENE3D,
     navigationHelpButton: false,
     animation: false,
@@ -25,116 +51,45 @@ onMounted(async () => {
     infoBox: false,
     selectionIndicator: false,
     sceneModePicker: false,
-    terrainProvider: props.mainViewer.terrainProvider,
-    skyAtmosphere: true,
+    terrainProvider: mainViewer.terrainProvider,
     creditContainer: document.createElement('div'), // hide credits
   })
 
-  const mainLayers = props.mainViewer.imageryLayers;
-  if (mainLayers) {
-    for (let i = 0; i < mainLayers.length; i++) {
-      const layer = mainLayers.get(i);
-      if (layer && layer.imageryProvider) {
-        miniViewer.imageryLayers.addImageryProvider(layer.imageryProvider);
-      }
+  const mainLayers = mainViewer.imageryLayers;
+  if (mainViewer.imageryLayers.length > 0) {
+    miniViewer.imageryLayers.removeAll();
+    const primaryLayer = mainViewer.imageryLayers.get(0);
+    if (primaryLayer?.imageryProvider) {
+      miniViewer.imageryLayers.addImageryProvider(primaryLayer.imageryProvider);
     }
   }
 
-  miniViewer.scene.skyAtmosphere = props.mainViewer.scene.skyAtmosphere
-  miniViewer.scene.fog = props.mainViewer.scene.fog
+  const scene = miniViewer.scene
+  scene.backgroundColor = props.Cesium.Color.BLACK
+  scene.logarithmicDepthBuffer = true
+  scene.light = mainViewer.scene.light
+  scene.globe.enableLighting = true
 
-  miniViewer.scene.backgroundColor = props.Cesium.Color.BLACK
-  miniViewer.scene.logarithmicDepthBuffer = true
-  miniViewer.scene.light = props.mainViewer.scene.light
-  miniViewer.scene.globe.enableLighting = true
+  scene.screenSpaceCameraController.enableInputs = false;
 
-  miniViewer.scene.screenSpaceCameraController.enableRotate = false;
-  miniViewer.scene.screenSpaceCameraController.enableTranslate = false;
-  miniViewer.scene.screenSpaceCameraController.enableZoom = false;
-
-  props.mainViewer.camera.changed.addEventListener(updateMiniView)
-
-  window.miniViewerInstance = miniViewer
+  mainViewer.camera.changed.addEventListener(updateMiniView)
 
   await loadPlanes(miniViewer)
 })
 
 onUnmounted(() => {
-  window.miniViewerInstance = null;
+  if (miniViewer) {
+    props.mainViewer.camera.changed.removeEventListener(updateMiniView);
+    miniViewer.destroy();
+  }
 });
 
-watch(() => props.moonPos, (newPos) => {
-  updateMiniView()
-}, {deep: true})
+watch(() => props.moonPos, updateMiniView, { deep: true });
 
-watch(() => props.planes, async (newData) => {
-  if (miniViewer && newData.length > 0) {
-    const { updatePlanes } = await import("@/utils/scene.js");
-    await updatePlanes(miniViewer, newData);
-
-    /*
-    // --- SYNC DEBUG LOGS ---
-    const mainCount = props.mainViewer.entities.values.filter(e => e.id !== 'Moon').length;
-    const miniCount = miniViewer.entities.values.filter(e => e.id !== 'moon-xray-border' && e.id !== 'Moon').length;
-
-    console.group('✈️ Plane Sync Check');
-    console.log(`Main Viewer Planes: ${mainCount}`);
-    console.log(`Mini Viewer Planes: ${miniCount}`);
-
-    if (mainCount === miniCount) {
-      console.log('%c✅ Sync OK', 'color: green; font-weight: bold;');
-    } else {
-      console.warn('%c❌ Sync Mismatch!', 'color: orange; font-weight: bold;');
-      // Optional: Check if a specific ID exists in both
-      if (newData.length > 0) {
-        const testId = newData[0].id;
-        const inMain = !!props.mainViewer.entities.getById(testId);
-        const inMini = !!miniViewer.entities.getById(testId);
-        console.log(`Test Flight [${testId}] -> Main: ${inMain}, Mini: ${inMini}`);
-      }
-    }
-    console.groupEnd();
-    // ------------------
-    */
-  }
+watch(() => props.planes, (newData) => {
+  if (miniViewer) updatePlanes(miniViewer, newData);
 }, { deep: true });
 
-function updateMiniView() {
-  if (!props.moonPos || !miniViewer) return
-
-  const Cesium = props.Cesium
-  const mainCamera = props.mainViewer.camera
-
-  const moonDirection = new Cesium.Cartesian3()
-  Cesium.Cartesian3.subtract(props.moonPos, mainCamera.position, moonDirection);
-
-  const distanceToMoon = Cesium.Cartesian3.magnitude(moonDirection);
-  if (distanceToMoon <= 0) return;
-
-  Cesium.Cartesian3.normalize(moonDirection, moonDirection);
-
-  const up = mainCamera.up
-  const right = new Cesium.Cartesian3()
-  Cesium.Cartesian3.cross(moonDirection, up, right)
-  Cesium.Cartesian3.normalize(right, right)
-
-  const actualUp = new Cesium.Cartesian3()
-  Cesium.Cartesian3.cross(right, moonDirection, actualUp)
-  Cesium.Cartesian3.normalize(actualUp, actualUp)
-
-  miniViewer.camera.setView({
-    destination: mainCamera.position,
-    orientation: {
-      direction: moonDirection,
-      up: actualUp
-    }
-  });
-
-  const moonRadius = 1737400 // 10 Moons
-  const moonAngularSize = 2 * Math.atan(moonRadius / distanceToMoon)
-
-  miniViewer.camera.frustum.fov = moonAngularSize * 10
-}
 </script>
 
 <template>
@@ -171,8 +126,8 @@ function updateMiniView() {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 42px;
-  height: 42px;
+  width: 27px;
+  height: 27px;
   border: 2px solid yellow;
   border-radius: 50%;
   box-shadow: 0 0 8px rgba(255, 255, 0, 0.8);
