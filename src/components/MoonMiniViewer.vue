@@ -126,7 +126,11 @@ watch(() => props.planes, (newData) => {
       <div class="reticle-ring" :style="reticleStyle"></div>
     </div>
     <div class="zoom-controls">
-      <label>Zoom (Moon diameters): </label>
+      <div class="labels">
+        <label class="zoom-label">ZOOM </label>
+        <label class="zoom-sub">(Moon diameters): </label>
+      </div>
+
       <input
         type="range"
         v-model.number="moonWidthMultiplier"
@@ -134,7 +138,8 @@ watch(() => props.planes, (newData) => {
         max="50"
         step="1"
       />
-      <span>{{ moonWidthMultiplier }}</span>
+
+      <span class="zoom-value">{{ moonWidthMultiplier }}</span>
     </div>
   </div>
 </template>
@@ -144,18 +149,19 @@ watch(() => props.planes, (newData) => {
   position: absolute;
   bottom: 24px;
   left: 24px;
-  width: 400px;
-  height: 400px;
+  width: 440px;
+  height: 440px;
   z-index: 2000;
   pointer-events: none;
 }
 .mini-moon-viewer {
   position: absolute;
-  bottom: 20px;
+  bottom: 50px;
   left: 20px;
   width: 400px;
   height: 400px;
   border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
   overflow: hidden;
   z-index: 2000;
   mask-image: radial-gradient(circle, white 100%, black 100%);
@@ -173,14 +179,44 @@ watch(() => props.planes, (newData) => {
 }
 .zoom-controls {
   position: absolute;
-  bottom: -40px;
-  left: 20px;
+  bottom: 10px;
+  left: 60px;
   width: 300px;
   display: flex;
   align-items: center;
   gap: 10px;
   color: white;
+  background: rgba(0, 0, 0, 0.0);
   pointer-events: auto;
   text-shadow: 1px 1px 2px black;
+  padding: 10px;
+}
+.labels{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+.zoom-label{
+  font-weight: bold;
+  font-size: 14px;
+  color: #fff;
+}
+.zoom-sub{
+  font-size: 9px;
+  color:#fff;
+  text-transform: uppercase;
+}
+input[type="range"] {
+  flex-grow: 1;
+  cursor: pointer;
+  accent-color: white;
+}
+.zoom-value {
+  font-size: 16px;
+  min-width: 30px;
+  font-weight: bold;
+  color: white;
+  text-align: right;
 }
 </style>
