@@ -179,22 +179,31 @@ async function addNextPostion(flight, entity, futureTime){
     entity.position.addSample(futureTime, nextPos)
 }
 
-function writeToLogFile(logEntry) {
-    fs.mkdir('./Logs', (err) => {
-        if (err) {
-            console.log('The folder already existed');
-        }
-        console.log('The folder has been created');
-    });
+async function sendToLogFile(logEntry) {
+    /*
+    Source : https://brightdata.fr/blog/donnees-web/fetch-api-in-javascript
+    */
 
-    const logFilePath = path.join("./Logs", "log.txt");
     const formattedLogEntry = `[${new Date().toISOString()}] ${logEntry}\n`;
+    const url = "http://localhost:8080/logs"
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                'Content-type': 'application/json; charset=UTF-8',
+            },
+            body: JSON.stringify({
+                title: 'Logs',
+                message: formattedLogEntry,
+            }),
+        });
 
-    fs.appendFile(logFilePath,formattedLogEntry, (err) => {
-        if (err) {
-            console.log('Error writting to log file', err);
+        if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
         }
-    });
+    } catch (error) {
+        console.error(error.message);
+    }
 }
 
 
@@ -329,7 +338,12 @@ function calculateMoonPlane(flight,viewer) {
     const corner_O = Math.acos(dot / (norme_u * norme_v));
 
     if (corner_O <= 0.0045) {
-        console.log("Avion devant la lune !!!!")
+        const logMessage = `The plane ${flight.id} passed in front of the moon`
+        writeToLogFile(logMessage)
+    }
+    else if (corner_O <= 0.0135) {
+        const logMessage = `The plane ${flight.id} passed close to the moon`
+        writeToLogFile(logMessage)
     }
 }
 async function addNewPlanes(viewer, data){
@@ -346,3 +360,6 @@ async function addNewPlanes(viewer, data){
     })
 }
 
+
+const logMessage = `The plane ${flight.id} passed close to the moon`
+writeToLogFile(logMessage)
