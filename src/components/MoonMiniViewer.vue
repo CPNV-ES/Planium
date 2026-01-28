@@ -14,7 +14,7 @@ let miniViewer = null;
 let syncLayers = null;
 
 const moonRadius = 1737400 // meters
-const moonWidthMultiplier = ref(15); // width multiplier (in Moon's diameter, default: 15)
+const moonWidthMultiplier = ref(6); // width multiplier (in Moon's diameter, default: 6 Moons)
 
 const reticleStyle = computed(() => { // adjust reticle to moon's size
   const size = (400 / moonWidthMultiplier.value) + 2;
