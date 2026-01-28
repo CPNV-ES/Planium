@@ -1,17 +1,19 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import {ref, onMounted, watch, onUnmounted} from 'vue';
+import {loadPlanes} from "@/utils/scene.js";
 
 const props = defineProps({
   mainViewer: Object, // pass main Cesium.Viewer object
   Cesium: Object,     // pass Cesium library
-  moonPos: Object     // pass Moon position
+  moonPos: Object,    // pass Moon position
+  planes: Array       // pass plane data
 });
 
 const miniViewerContainer = ref(null);
 let miniViewer = null;
 let moonHighlight = null;
 
-onMounted(() => {
+onMounted(async () => {
   miniViewer = new props.Cesium.Viewer(miniViewerContainer.value, {
     sceneMode: props.Cesium.SceneMode.SCENE3D,
     navigationHelpButton: false,
@@ -60,7 +62,15 @@ onMounted(() => {
   });
 
   props.mainViewer.camera.changed.addEventListener(updateMiniView)
+
+  window.miniViewerInstance = miniViewer
+
+  await loadPlanes(miniViewer)
 })
+
+onUnmounted(() => {
+  window.miniViewerInstance = null;
+});
 
 watch(() => props.moonPos, (newPos) => {
   if (moonHighlight && newPos) {
@@ -69,12 +79,47 @@ watch(() => props.moonPos, (newPos) => {
   updateMiniView()
 }, {deep: true})
 
+watch(() => props.planes, async (newData) => {
+  if (miniViewer && newData.length > 0) {
+    const { updatePlanes } = await import("@/utils/scene.js");
+    await updatePlanes(miniViewer, newData);
+
+    /*
+    // --- SYNC DEBUG LOGS ---
+    const mainCount = props.mainViewer.entities.values.filter(e => e.id !== 'Moon').length;
+    const miniCount = miniViewer.entities.values.filter(e => e.id !== 'moon-xray-border' && e.id !== 'Moon').length;
+
+    console.group('✈️ Plane Sync Check');
+    console.log(`Main Viewer Planes: ${mainCount}`);
+    console.log(`Mini Viewer Planes: ${miniCount}`);
+
+    if (mainCount === miniCount) {
+      console.log('%c✅ Sync OK', 'color: green; font-weight: bold;');
+    } else {
+      console.warn('%c❌ Sync Mismatch!', 'color: orange; font-weight: bold;');
+      // Optional: Check if a specific ID exists in both
+      if (newData.length > 0) {
+        const testId = newData[0].id;
+        const inMain = !!props.mainViewer.entities.getById(testId);
+        const inMini = !!miniViewer.entities.getById(testId);
+        console.log(`Test Flight [${testId}] -> Main: ${inMain}, Mini: ${inMini}`);
+      }
+    }
+    console.groupEnd();
+    // ------------------
+    */
+  }
+}, { deep: true });
 
 function updateMiniView() {
   if (!props.moonPos || !miniViewer) return
 
   const Cesium = props.Cesium
   const mainCamera = props.mainViewer.camera
+
+  if (moonHighlight) {
+    moonHighlight.position = props.moonPos
+  }
 
   const moonDirection = new Cesium.Cartesian3()
   Cesium.Cartesian3.subtract(props.moonPos, mainCamera.position, moonDirection);
@@ -142,6 +187,7 @@ function updateMiniView() {
   border: 2px solid rgba(255, 255, 255, 0.5);
   overflow: hidden;
   z-index: 2000;
+  mask-image: radial-gradient(circle, white 100%, black 100%);
 }
 .overlay {
   position: absolute;

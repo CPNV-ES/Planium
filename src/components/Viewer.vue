@@ -13,6 +13,7 @@ import MoonMiniViewer from "@/components/MoonMiniViewer.vue"
 import CameraController from './CameraController.vue'
 import CompassIndicator from '@/components/CompassIndicator.vue'
 import CoordinateForm from "@/components/CoordinateForm.vue";
+import {getFLights} from "@/utils/api.js";
 
 const viewerRef = ref(null)
 const isViewerReady = ref(false)
@@ -23,7 +24,7 @@ const location = {
   lng: undefined,
   lat: undefined
 }
-
+const planeData = ref([])
 const moonComponentRef = ref(null)
 
 
@@ -54,7 +55,15 @@ const onViewerReady = async ({Cesium, viewer}) => {
       isViewerReady.value = true
 
       setInterval(async () => {
-       await updatePlanes(mapViewer.value)
+        const data = await getFLights('http://localhost:8080/flights', {
+          long: 6.500465335539498,
+          lat: 46.82166054184684
+        })
+
+        if (data){
+          planeData.value = data
+          await updatePlanes(mapViewer.value, data)
+        }
       }, 30000)
 
     } catch (error) {
@@ -94,6 +103,7 @@ function onLocationSubmitted(e){
           :mainViewer="mapViewer"
           :Cesium="cesium"
           :moonPos="moonComponentRef?.moonPos"
+          :planes="planeData"
       />
       <CameraController v-if="isViewerReady" :viewer="mapViewer" />
       <CompassIndicator v-if="isViewerReady" :viewer="mapViewer" />

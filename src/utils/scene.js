@@ -156,8 +156,13 @@ async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id)
     });
 }
 
-export async function updatePlanes(viewer){
-    const data = await getFLights('http://localhost:8080/flights', {long:6.500465335539498 , lat: 46.82166054184684})
+export async function updatePlanes(viewer, data = null){
+    if (!data){
+        data = await getFLights('http://localhost:8080/flights', {
+            long:6.500465335539498 ,
+            lat: 46.82166054184684
+        })
+    }
     const futureTime = Cesium.JulianDate.addSeconds(
         viewer.clock.currentTime,
         31,
@@ -176,6 +181,7 @@ export async function updatePlanes(viewer){
 
         await addNewPlanes(viewer, data)
     }
+    return data;
 }
 
 async function addNextPostion(flight, entity, futureTime){
