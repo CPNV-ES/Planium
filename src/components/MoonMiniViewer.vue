@@ -1,5 +1,5 @@
 <script setup>
-import {ref, onMounted, watch, onUnmounted} from 'vue';
+import {onMounted, onUnmounted, ref, watch} from 'vue';
 import {loadPlanes} from "@/utils/scene.js";
 
 const props = defineProps({
@@ -11,7 +11,6 @@ const props = defineProps({
 
 const miniViewerContainer = ref(null);
 let miniViewer = null;
-let moonHighlight = null;
 
 onMounted(async () => {
   miniViewer = new props.Cesium.Viewer(miniViewerContainer.value, {
@@ -31,10 +30,14 @@ onMounted(async () => {
     creditContainer: document.createElement('div'), // hide credits
   })
 
-  const mainLayers = props.mainViewer.imageryLayers
-  for (let i = 0; i < mainLayers.length; i++) {
-    const layer = mainLayers.get(i)
-    miniViewer.imageryLayers.addImageryProvider(layer.imageryProvider)
+  const mainLayers = props.mainViewer.imageryLayers;
+  if (mainLayers) {
+    for (let i = 0; i < mainLayers.length; i++) {
+      const layer = mainLayers.get(i);
+      if (layer && layer.imageryProvider) {
+        miniViewer.imageryLayers.addImageryProvider(layer.imageryProvider);
+      }
+    }
   }
 
   miniViewer.scene.skyAtmosphere = props.mainViewer.scene.skyAtmosphere
@@ -49,18 +52,6 @@ onMounted(async () => {
   miniViewer.scene.screenSpaceCameraController.enableTranslate = false;
   miniViewer.scene.screenSpaceCameraController.enableZoom = false;
 
-  moonHighlight = miniViewer.entities.add({
-    id: 'moon-xray-border',
-    position: props.moonPos,
-    point: {
-      pixelSize: 1,
-      color: props.Cesium.Color.TRANSPARENT,
-      outlineColor: props.Cesium.Color.YELLOW.withAlpha(0.8),
-      outlineWidth: 2,
-      disableDepthTestDistance: Number.POSITIVE_INFINITY
-    }
-  });
-
   props.mainViewer.camera.changed.addEventListener(updateMiniView)
 
   window.miniViewerInstance = miniViewer
@@ -73,9 +64,6 @@ onUnmounted(() => {
 });
 
 watch(() => props.moonPos, (newPos) => {
-  if (moonHighlight && newPos) {
-    moonHighlight.position = newPos
-  }
   updateMiniView()
 }, {deep: true})
 
@@ -117,10 +105,6 @@ function updateMiniView() {
   const Cesium = props.Cesium
   const mainCamera = props.mainViewer.camera
 
-  if (moonHighlight) {
-    moonHighlight.position = props.moonPos
-  }
-
   const moonDirection = new Cesium.Cartesian3()
   Cesium.Cartesian3.subtract(props.moonPos, mainCamera.position, moonDirection);
 
@@ -149,22 +133,15 @@ function updateMiniView() {
   const moonRadius = 1737400 // 10 Moons
   const moonAngularSize = 2 * Math.atan(moonRadius / distanceToMoon)
 
-  const currentFov = moonAngularSize * 10
-  miniViewer.camera.frustum.fov = currentFov
-
-  const viewerHeight = 400
-  const moonPixelDiameter = (moonAngularSize / currentFov) * viewerHeight
-
-  if (moonHighlight && moonHighlight.point){
-    moonHighlight.point.pixelSize =  moonPixelDiameter
-  }
+  miniViewer.camera.frustum.fov = moonAngularSize * 10
 }
 </script>
 
 <template>
   <div class="telescope-container">
-    <div ref="miniViewerContainer" class="mini-moon-viewer"></div>
-    <div class="overlay"></div>
+    <div ref="miniViewerContainer" class="mini-moon-viewer">
+      <div class="reticle-ring"></div>
+    </div>
   </div>
 </template>
 
@@ -173,8 +150,8 @@ function updateMiniView() {
   position: absolute;
   bottom: 24px;
   left: 24px;
-  width: 200px;
-  height: 200px;
+  width: 400px;
+  height: 400px;
   z-index: 2000;
   pointer-events: none;
 }
@@ -189,13 +166,17 @@ function updateMiniView() {
   z-index: 2000;
   mask-image: radial-gradient(circle, white 100%, black 100%);
 }
-.overlay {
+.reticle-ring {
   position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 42px;
+  height: 42px;
+  border: 2px solid yellow;
   border-radius: 50%;
-  background-image:
-      linear-gradient(to right, transparent 49.5%, rgba(255,255,255,0.2) 50%, transparent 50.5%),
-      linear-gradient(to bottom, transparent 49.5%, rgba(255,255,255,0.2) 50%, transparent 50.5%);
+  box-shadow: 0 0 8px rgba(255, 255, 0, 0.8);
+  opacity: 0.8;
+  z-index: 2001;
 }
 </style>
