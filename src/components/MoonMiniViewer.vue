@@ -9,6 +9,7 @@ const props = defineProps({
 
 const miniViewerContainer = ref(null);
 let miniViewer = null;
+let moonHighlight = null;
 
 onMounted(() => {
   miniViewer = new props.Cesium.Viewer(miniViewerContainer.value, {
@@ -23,21 +24,48 @@ onMounted(() => {
     infoBox: false,
     selectionIndicator: false,
     sceneModePicker: false,
+    terrainProvider: props.mainViewer.terrainProvider,
+    skyAtmosphere: true,
     creditContainer: document.createElement('div'), // hide credits
   })
+
+  const mainLayers = props.mainViewer.imageryLayers
+  for (let i = 0; i < mainLayers.length; i++) {
+    const layer = mainLayers.get(i)
+    miniViewer.imageryLayers.addImageryProvider(layer.imageryProvider)
+  }
+
+  miniViewer.scene.skyAtmosphere = props.mainViewer.scene.skyAtmosphere
+  miniViewer.scene.fog = props.mainViewer.scene.fog
 
   miniViewer.scene.backgroundColor = props.Cesium.Color.BLACK
   miniViewer.scene.logarithmicDepthBuffer = true
   miniViewer.scene.light = props.mainViewer.scene.light
+  miniViewer.scene.globe.enableLighting = true
 
   miniViewer.scene.screenSpaceCameraController.enableRotate = false;
   miniViewer.scene.screenSpaceCameraController.enableTranslate = false;
   miniViewer.scene.screenSpaceCameraController.enableZoom = false;
 
+  moonHighlight = miniViewer.entities.add({
+    id: 'moon-xray-border',
+    position: props.moonPos,
+    point: {
+      pixelSize: 1,
+      color: props.Cesium.Color.TRANSPARENT,
+      outlineColor: props.Cesium.Color.YELLOW.withAlpha(0.8),
+      outlineWidth: 2,
+      disableDepthTestDistance: Number.POSITIVE_INFINITY
+    }
+  });
+
   props.mainViewer.camera.changed.addEventListener(updateMiniView)
 })
 
-watch(() => props.moonPos, () => {
+watch(() => props.moonPos, (newPos) => {
+  if (moonHighlight && newPos) {
+    moonHighlight.position = newPos
+  }
   updateMiniView()
 }, {deep: true})
 
@@ -48,19 +76,43 @@ function updateMiniView() {
   const Cesium = props.Cesium
   const mainCamera = props.mainViewer.camera
 
-  const moonRadius = 1737400 // 10 Moons
-  const viewWidthMeters = moonRadius * 20
-  const fov = miniViewer.camera.frustum.fov || Math.PI / 3
-  const distance = (viewWidthMeters / 2) / Math.tan(fov / 2)
+  const moonDirection = new Cesium.Cartesian3()
+  Cesium.Cartesian3.subtract(props.moonPos, mainCamera.position, moonDirection);
 
-  miniViewer.camera.lookAt(
-      props.moonPos,
-      new Cesium.HeadingPitchRange(
-          mainCamera.heading,
-          mainCamera.pitch,
-          distance
-      )
-  )
+  const distanceToMoon = Cesium.Cartesian3.magnitude(moonDirection);
+  if (distanceToMoon <= 0) return;
+
+  Cesium.Cartesian3.normalize(moonDirection, moonDirection);
+
+  const up = mainCamera.up
+  const right = new Cesium.Cartesian3()
+  Cesium.Cartesian3.cross(moonDirection, up, right)
+  Cesium.Cartesian3.normalize(right, right)
+
+  const actualUp = new Cesium.Cartesian3()
+  Cesium.Cartesian3.cross(right, moonDirection, actualUp)
+  Cesium.Cartesian3.normalize(actualUp, actualUp)
+
+  miniViewer.camera.setView({
+    destination: mainCamera.position,
+    orientation: {
+      direction: moonDirection,
+      up: actualUp
+    }
+  });
+
+  const moonRadius = 1737400 // 10 Moons
+  const moonAngularSize = 2 * Math.atan(moonRadius / distanceToMoon)
+
+  const currentFov = moonAngularSize * 10
+  miniViewer.camera.frustum.fov = currentFov
+
+  const viewerHeight = 400
+  const moonPixelDiameter = (moonAngularSize / currentFov) * viewerHeight
+
+  if (moonHighlight && moonHighlight.point){
+    moonHighlight.point.pixelSize =  moonPixelDiameter
+  }
 }
 </script>
 
