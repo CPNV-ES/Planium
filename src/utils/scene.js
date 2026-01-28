@@ -135,7 +135,7 @@ export async function loadPlanes(viewer, location){
 async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id) {
     // Load the glTF model from Cesium ion.
     const airplaneEntity = viewer.entities.add({
-        id: id,
+        id: "plane_" + id,
         availability: new Cesium.TimeIntervalCollection([ new Cesium.TimeInterval({ start: start, stop: stop }) ]),
         position: positionProperty,
         // Attach the 3D model instead of the green point.
@@ -147,6 +147,7 @@ async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id)
 }
 
 export async function updatePlanes(viewer, location){
+    debugger
     const data = await getFLights('http://localhost:8080/flights', {long:location.long , lat: location.lat})
     if (data.length > 0){
         const futureTime = Cesium.JulianDate.addSeconds(
@@ -156,7 +157,7 @@ export async function updatePlanes(viewer, location){
         );
         if (data !== undefined && viewer.entities !== undefined) {
             viewer.entities.values.forEach(async (entity) => {
-                const flight = data.find(flight => flight.id === entity.id)
+                const flight = data.find(flight => entity.id.includes(flight.id))
                 if(flight !== undefined){
                     await addNextPostion(flight, entity, futureTime)
                 }else if(entity.id !== 'Moon'){
@@ -251,10 +252,11 @@ function calculateMoonPlane(flight,viewer) {
         console.log("Avion devant la lune !!!!")
     }
 }
+
 async function addNewPlanes(viewer, data){
     const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
     data.forEach(async (flight) => {
-        if (viewer.entities.values.find(entity => entity.id === flight.id) === undefined){
+        if (viewer.entities.values.find(entity => entity.id.includes(flight.id)) === undefined){
             const positionProperty = new Cesium.SampledPositionProperty();
             const position = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
             positionProperty.addSample(viewer.clock.currentTime, position);

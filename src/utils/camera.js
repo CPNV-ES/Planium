@@ -4,7 +4,6 @@ export function flyTo(camera, cesium, lat, lng){
             destination: cesium.Cartesian3.fromDegrees(
                 lng ??  6.500465335539498, // longitude is defaulted to Sainte-Croix if undefined
                 lat ??46.82166054184684, //latitude is defaulted to Sainte-Croix if undefined
-                1000, //height
             ),
             orientation: {
                 heading: Cesium.Math.toRadians(180.0), // Orientation to the south
