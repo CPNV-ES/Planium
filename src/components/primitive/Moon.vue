@@ -9,6 +9,7 @@ This component defines Moon's parameters and places it to real location in real 
 const moonPos = ref(null); // 3D position (x, y, z)
 const point = ref(null);  // point space marker (Moon display)
 const label = ref(null);  // display text above Moon
+const moonRadius = 1737400; // meters
 
 // const debugStatus = ref("Waiting for viewer..."); // DEBUG
 let removeTickListener = null; // for detaching Cesium clock listener when component is destroyed
@@ -24,9 +25,8 @@ const onViewerReady = ({ Cesium, viewer }) => {
   // style config
   // point marker (Moon)
   point.value = {
-    pixelSize: 40,
-    color: Cesium.Color.fromCssColorString("#B2B2B2"), // Moon gray
-    outlineColor: Cesium.Color.WHITE,
+    color: Cesium.Color.TRANSPARENT,
+    outlineColor: Cesium.Color.YELLOW,
     outlineWidth: 2,
     disableDepthTestDistance: Number.POSITIVE_INFINITY // set limit to infinity to ensure Moon is always displayed in front
   };
@@ -97,7 +97,31 @@ const onViewerReady = ({ Cesium, viewer }) => {
           scratchCartesian,
           moonPos.value || new Cesium.Cartesian3()
       );
-      // debugStatus.value = "Moon Synced"; // DEBUG
+    }
+
+    if (moonPos.value) {
+      const camera = viewer.camera;
+      const canvasHeight = viewer.scene.canvas.clientHeight;
+
+      // Calculate distance
+      const distance = Cesium.Cartesian3.distance(camera.position, moonPos.value);
+
+      // Angular diameter math
+      const angularSize = 2 * Math.atan(moonRadius / distance);
+
+      // Safety check for FOV (handling Perspective vs Orthographic)
+      const fov = camera.frustum.fov || Cesium.Math.toRadians(60);
+
+      // Calculate diameter
+      const pixelDiameter = (angularSize / fov) * canvasHeight;
+
+      // Update point with a guard against negative/infinite values
+      if (isFinite(pixelDiameter) && pixelDiameter > 0) {
+        point.value = {
+          ...point.value,
+          pixelSize: pixelDiameter
+        };
+      }
     }
   };
 
@@ -105,34 +129,6 @@ const onViewerReady = ({ Cesium, viewer }) => {
   viewer.clock.onTick.addEventListener(listener);
   // save function that removes clock listener when component is destroyed
   removeTickListener = () => viewer.clock.onTick.removeEventListener(listener);
-
-  /* Uncomment to redirect camera to moon's location
-  // ---- CAMERA FLIGHT TO MOON ----
-  setTimeout(() => {
-    if (!moonPos.value) return;
-
-    debugStatus.value = "Traveling to Moon...";
-
-    const offset = Cesium.Cartesian3.multiplyByScalar(
-        Cesium.Cartesian3.normalize(moonPos.value, new Cesium.Cartesian3()),
-        20_000_000,
-        new Cesium.Cartesian3()
-    );
-
-    viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.subtract(
-          moonPos.value,
-          offset,
-          new Cesium.Cartesian3()
-      ),
-      orientation: {
-        direction: Cesium.Cartesian3.normalize(offset, new Cesium.Cartesian3()),
-        up: Cesium.Cartesian3.UNIT_Z
-      },
-      duration: 5
-    });
-  }, 4000);
-  */
 };
 
 onBeforeUnmount(() => {
