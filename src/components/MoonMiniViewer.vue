@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, onUnmounted, ref, watch} from 'vue';
+import {computed, onMounted, onUnmounted, ref, watch} from 'vue';
 import {loadPlanes, updatePlanes} from "@/utils/scene.js";
 
 const props = defineProps({
@@ -11,11 +11,21 @@ const props = defineProps({
 
 const miniViewerContainer = ref(null);
 let miniViewer = null;
+let syncLayers = null;
 
 const moonRadius = 1737400 // meters
+const moonWidthMultiplier = ref(15); // width multiplier (in Moon's diameter, default: 15)
+
+const reticleStyle = computed(() => { // adjust reticle to moon's size
+  const size = (400 / moonWidthMultiplier.value) + 2;
+  return {
+    width: `${size}px`,
+    height: `${size}px`
+  };
+});
 
 function updateMiniView() {
-  if (!props.moonPos || !miniViewer) return
+  if (!props.moonPos || !miniViewer || !props.mainViewer.camera.position) return
 
   const Cesium = props.Cesium
   const mainCamera = props.mainViewer.camera
@@ -32,15 +42,15 @@ function updateMiniView() {
     }
   });
 
-  const moonAngularSize = 2 * Math.atan(moonRadius / distanceToMoon)
-  miniViewer.camera.frustum.fov = moonAngularSize * 15 // zoom width in Moons (diameter)
+  const moonAngularSize = 2 * Math.atan(moonRadius / distanceToMoon) // Moon diameter
+  miniViewer.camera.frustum.fov = moonAngularSize * moonWidthMultiplier.value // zoom width in Moons (diameter)
 }
 
 onMounted(async () => {
   const { Cesium, mainViewer } = props;
 
   miniViewer = new Cesium.Viewer(miniViewerContainer.value, {
-    sceneMode: props.Cesium.SceneMode.SCENE3D,
+    sceneMode: Cesium.SceneMode.SCENE3D,
     navigationHelpButton: false,
     animation: false,
     timeline: false,
@@ -53,16 +63,27 @@ onMounted(async () => {
     sceneModePicker: false,
     terrainProvider: mainViewer.terrainProvider,
     creditContainer: document.createElement('div'), // hide credits
+    baseLayer: false
   })
 
-  const mainLayers = mainViewer.imageryLayers;
-  if (mainViewer.imageryLayers.length > 0) {
-    miniViewer.imageryLayers.removeAll();
-    const primaryLayer = mainViewer.imageryLayers.get(0);
-    if (primaryLayer?.imageryProvider) {
-      miniViewer.imageryLayers.addImageryProvider(primaryLayer.imageryProvider);
+  syncLayers = () => {
+    if (mainViewer.imageryLayers.length > 0) {
+      const primaryLayer = mainViewer.imageryLayers.get(0);
+
+      // The Critical Guard: Ensure provider exists AND is ready
+      if (primaryLayer && primaryLayer.imageryProvider) {
+        try {
+          miniViewer.imageryLayers.removeAll();
+          miniViewer.imageryLayers.addImageryProvider(primaryLayer.imageryProvider);
+        } catch (e) {
+          console.warn("Imagery provider not quite ready for rectangles:", e);
+        }
+      }
     }
   }
+
+  syncLayers()
+  mainViewer.imageryLayers.layerAdded.addEventListener(syncLayers);
 
   const scene = miniViewer.scene
   scene.backgroundColor = props.Cesium.Color.BLACK
@@ -80,9 +101,16 @@ onMounted(async () => {
 onUnmounted(() => {
   if (miniViewer) {
     props.mainViewer.camera.changed.removeEventListener(updateMiniView);
+
+    if (syncLayers) {
+      props.mainViewer.imageryLayers.layerAdded.removeEventListener(syncLayers)
+    }
+
     miniViewer.destroy();
   }
 });
+
+watch(moonWidthMultiplier, updateMiniView);
 
 watch(() => props.moonPos, updateMiniView, { deep: true });
 
@@ -95,7 +123,18 @@ watch(() => props.planes, (newData) => {
 <template>
   <div class="telescope-container">
     <div ref="miniViewerContainer" class="mini-moon-viewer">
-      <div class="reticle-ring"></div>
+      <div class="reticle-ring" :style="reticleStyle"></div>
+    </div>
+    <div class="zoom-controls">
+      <label>Zoom (Moon diameters): </label>
+      <input
+        type="range"
+        v-model.number="moonWidthMultiplier"
+        min="2"
+        max="50"
+        step="1"
+      />
+      <span>{{ moonWidthMultiplier }}</span>
     </div>
   </div>
 </template>
@@ -126,12 +165,22 @@ watch(() => props.planes, (newData) => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 27px;
-  height: 27px;
   border: 2px solid yellow;
   border-radius: 50%;
   box-shadow: 0 0 8px rgba(255, 255, 0, 0.8);
   opacity: 0.8;
   z-index: 2001;
+}
+.zoom-controls {
+  position: absolute;
+  bottom: -40px;
+  left: 20px;
+  width: 300px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  pointer-events: auto;
+  text-shadow: 1px 1px 2px black;
 }
 </style>
