@@ -85,7 +85,6 @@ export async function loadPlanes(viewer, location){
           Initialize the viewer's clock by setting its start and stop to the flight start and stop times we just calculated.
           Also, set the viewer's current time to the start time and take the user to that time.
         */
-        const timeStepInSeconds = 30;
         // const totalSeconds = timeStepInSeconds * (flightData.length - 1);
         const start = Cesium.JulianDate.now();
         const stop = Cesium.JulianDate.addSeconds(start, 10000000000, new Cesium.JulianDate());
@@ -112,20 +111,14 @@ export async function loadPlanes(viewer, location){
 
             const position = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt);
             // Store the position along with its timestamp.
-            // Here we add the positions all upfront, but these can be added at run-time as samples are received from a server.
             positionProperty.addSample(start, position);
             // Make planes appear even if it's too late
             positionProperty.forwardExtrapolationType = Cesium.ExtrapolationType.HOLD
             positionProperty.backwardExtrapolationType = Cesium.ExtrapolationType.HOLD
 
-            // viewer.entities.add({
-            //     description: `Location: (${flight.long}, ${flight.lat}, ${flight.alt})`,
-            //     position: position,
-            //     point: {pixelSize: 10, color: Cesium.Color.RED}
-            // });
-
             await loadModel(viewer, start, stop, positionProperty, airplaneUri, flight.id);
 
+            positionProperty.addSample(getNextTimeBySecond(viewer, 30), determinatePlane(flight))
         }
     }
 
@@ -134,7 +127,7 @@ export async function loadPlanes(viewer, location){
 
 async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id) {
     // Load the glTF model from Cesium ion.
-    const airplaneEntity = viewer.entities.add({
+    viewer.entities.add({
         id: "plane_" + id,
         availability: new Cesium.TimeIntervalCollection([ new Cesium.TimeInterval({ start: start, stop: stop }) ]),
         position: positionProperty,
@@ -150,16 +143,12 @@ export async function updatePlanes(viewer, location){
 
     const data = await getFLights('http://localhost:8080/flights', {long:location.long , lat: location.lat})
     if (data.length > 0){
-        const futureTime = Cesium.JulianDate.addSeconds(
-            viewer.clock.currentTime,
-            30,
-            new Cesium.JulianDate()
-        );
+
         if (data !== undefined && viewer.entities !== undefined) {
             viewer.entities.values.forEach(async (entity) => {
                     const flight = data.find(flight => entity.id.includes(flight.id))
                     if(flight !== undefined){
-                        await addNextPostion(flight, entity, futureTime)
+                        await addNextPostion(determinatePlane(flight), entity, getNextTimeBySecond(viewer, 30))
                     }else if(entity.id.includes('plane') ){
                         viewer.entities.remove(entity)
                     }
@@ -171,13 +160,17 @@ export async function updatePlanes(viewer, location){
     }
 
 
-async function addNextPostion(position, entity, futureTime){
-    const time = Cesium.JulianDate.now();
-    const nextPos = Cesium.Cartesian3.fromDegrees(position.long, position.lat, position.alt)
+async function addNextPostion(nextPos, entity, futureTime){
     entity.position.addSample(futureTime, nextPos)
 }
 
-
+function getNextTimeBySecond(viewer, seconds){
+    return Cesium.JulianDate.addSeconds(
+        viewer.clock ? viewer.clock.currentTime : Cesium.JulianDate.now(),
+        seconds,
+        new Cesium.JulianDate()
+    );
+}
 
 function determinatePlane(flight) {
     /*
@@ -324,6 +317,7 @@ async function addNewPlanes(viewer, data){
             positionProperty.forwardExtrapolationType = Cesium.ExtrapolationType.HOLD
             positionProperty.backwardExtrapolationType = Cesium.ExtrapolationType.HOLD
             await loadModel(viewer, viewer.clock.currentTime, viewer.clock.stopTime, positionProperty, airplaneUri, flight.id)
+            positionProperty.addSample(getNextTimeBySecond(viewer, 30), determinatePlane(flight))
         }
     })
 }
