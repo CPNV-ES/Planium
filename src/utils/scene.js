@@ -177,29 +177,6 @@ async function addNextPostion(position, entity, futureTime){
     entity.position.addSample(futureTime, nextPos)
 }
 
-function checkLastOccurence(flight){
-    const isEven = flight.position._property._times % 2 === 0
-    return isEven
-}
-
-function calculateVelocity(posAncienne, posNouvelle, timeDelta) {
-    // 1. Soustraire les positions pour obtenir le vecteur direction
-    // vecteur = posNouvelle - posAncienne
-    const direction = Cesium.Cartesian3.subtract(
-        posNouvelle,
-        posAncienne,
-        new Cesium.Cartesian3()
-    );
-
-    // 2. Diviser par le temps pour obtenir la vitesse par seconde (m/s)
-    const velocityVector = Cesium.Cartesian3.divideByScalar(
-        direction,
-        timeDelta,
-        new Cesium.Cartesian3()
-    );
-
-    return velocityVector;
-}
 
 function calculateMoonPlane(flight,viewer) {
     /*
