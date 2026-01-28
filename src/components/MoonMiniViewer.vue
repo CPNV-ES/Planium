@@ -135,7 +135,7 @@ watch(() => props.planes, (newData) => {
         type="range"
         v-model.number="moonWidthMultiplier"
         min="2"
-        max="50"
+        max="20"
         step="1"
       />
 
