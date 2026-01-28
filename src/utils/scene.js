@@ -112,6 +112,7 @@ export async function loadPlanes(viewer, location){
             const position = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt);
             // Store the position along with its timestamp.
             positionProperty.addSample(start, position);
+            calculateMoonPlane(position, viewer)
             // Make planes appear even if it's too late
             positionProperty.forwardExtrapolationType = Cesium.ExtrapolationType.HOLD
             positionProperty.backwardExtrapolationType = Cesium.ExtrapolationType.HOLD
@@ -119,6 +120,7 @@ export async function loadPlanes(viewer, location){
             await loadModel(viewer, start, stop, positionProperty, airplaneUri, flight.id);
 
             positionProperty.addSample(getNextTimeBySecond(viewer, 30), determinatePlane(flight))
+            calculateMoonPlane(determinatePlane(flight), viewer)
         }
     }
 
@@ -149,6 +151,7 @@ export async function updatePlanes(viewer, location){
                     const flight = data.find(flight => entity.id.includes(flight.id))
                     if(flight !== undefined){
                         await addNextPostion(determinatePlane(flight), entity, getNextTimeBySecond(viewer, 30))
+                        calculateMoonPlane(determinatePlane(flight), viewer)
                     }else if(entity.id.includes('plane') ){
                         viewer.entities.remove(entity)
                     }
@@ -232,7 +235,7 @@ function determinatePlane(flight) {
     return Cesium.Cartesian3.fromDegrees(new_long, new_lat, new_alt);
 }
 
-function calculateMoonPlane(flight,viewer) {
+function calculateMoonPlane(positionCartesian,viewer) {
     /*
     Prompt to Claude :
     If I have a person (P), a plane (A), and the moon (L), I would like to know if the plane is in front of the moon
@@ -260,7 +263,7 @@ function calculateMoonPlane(flight,viewer) {
     O ≤ 0.0045 (radian)
     */
 
-    const positionCartesian = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt);
+    // const positionCartesian = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt);
 
     const x_A = positionCartesian.x;
     const y_A = positionCartesian.y;
