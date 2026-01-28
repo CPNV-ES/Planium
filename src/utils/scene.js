@@ -160,7 +160,7 @@ export async function updatePlanes(viewer, location){
                 const flight = data.find(flight => entity.id.includes(flight.id))
                 if(flight !== undefined){
                     await addNextPostion(flight, entity, futureTime)
-                }else if(entity.id !== 'Moon'){
+                }else if(entity.id.includes('plane') ){
                     viewer.entities.remove(entity)
                 }
 
