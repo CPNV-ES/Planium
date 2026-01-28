@@ -2,6 +2,10 @@ import {getFLights} from "@/utils/api.js";
 import fs from 'fs';
 import path from 'path';
 
+// data structure that allows logs to be stored
+// Source : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map
+const logs = new Map()
+
 export async function prepareScene(scene){
     //------------Uncomment if performance is low---------------------
     // scene.requestRenderMode = true;
@@ -179,24 +183,31 @@ async function addNextPostion(flight, entity, futureTime){
     entity.position.addSample(futureTime, nextPos)
 }
 
-async function sendToLogFile(logEntry) {
+async function sendToLogFile() {
     /*
     Source : https://brightdata.fr/blog/donnees-web/fetch-api-in-javascript
     */
 
-    const formattedLogEntry = `[${new Date().toISOString()}] ${logEntry}\n`;
+    // Source : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from
+    // Convert map to array
+    let logsArray = Array.from(logs.values());
+
     const url = "http://localhost:8080/logs"
+
     try {
         const response = await fetch(url, {
             method: "POST",
             headers: {
                 'Content-type': 'application/json; charset=UTF-8',
             },
+            // Source : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/join
             body: JSON.stringify({
-                title: 'Logs',
-                message: formattedLogEntry,
+                message: logsArray.join('\n'),
             }),
         });
+
+        // Clear the logs once they have been sent to the API
+        logs.clear();
 
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
@@ -294,7 +305,6 @@ function calculateMoonPlane(flight,viewer) {
     compare the angle of the moon with that of the airplane
     O ≤ 0.0045 (radian)
     */
-
     const positionCartesian = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt);
 
     const x_A = positionCartesian.x;
@@ -337,14 +347,24 @@ function calculateMoonPlane(flight,viewer) {
 
     const corner_O = Math.acos(dot / (norme_u * norme_v));
 
+    // Source : https://developer.mozilla.org/fr/docs/Web/JavaScript/Reference/Global_Objects/Map/has
+    const key = `${flight.id}`
+
+    const currentLog = logs.get(flight.id);
+
     if (corner_O <= 0.0045) {
-        const logMessage = `The plane ${flight.id} passed in front of the moon`
-        writeToLogFile(logMessage)
+        if (!currentLog) {
+            logs.set(key, `Aircraft pass in front of the moon | Camera : ${cameraPos} | Aircraft ID : ${flight.id} 
+            | Time : ${new Date().toISOString()}`);
+        }
+    } else if (corner_O <= 0.0135) {
+        // Source : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/startsWith
+        if (!currentLog || !currentLog.startsWith("Aircraft pass in front")) {
+            logs.set(key, `Aircraft pass close to the moon | Camera : ${cameraPos} | Aircraft ID : ${flight.id} 
+            | Time : ${new Date().toISOString()}`);
+        }
     }
-    else if (corner_O <= 0.0135) {
-        const logMessage = `The plane ${flight.id} passed close to the moon`
-        writeToLogFile(logMessage)
-    }
+
 }
 async function addNewPlanes(viewer, data){
     const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
@@ -360,6 +380,6 @@ async function addNewPlanes(viewer, data){
     })
 }
 
-
-const logMessage = `The plane ${flight.id} passed close to the moon`
-writeToLogFile(logMessage)
+// Source : https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval
+// Send the logs every 15 seconds
+setInterval(sendToLogFile, 15000)
