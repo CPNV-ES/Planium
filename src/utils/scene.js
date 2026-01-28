@@ -177,67 +177,80 @@ async function addNextPostion(flight, entity, futureTime){
     entity.position.addSample(futureTime, nextPos)
 }
 
-function determinatePlane(flight) {
-/*
+function calculateMoonPlane(flight,viewer) {
+    /*
     Prompt to Claude :
-    I want to predict the geographical position of an aircraft in 30 seconds.
+    If I have a person (P), a plane (A), and the moon (L), I would like to know if the plane is in front of the moon
+    from P's point of view. Please provide the formulas needed for this calculation.
 
-    Available data:
-    - Current position: latitude (degrees), longitude (degrees), altitude (meters)
-    - Ground speed: m/s
-    - Heading: degrees (0° = North, 90° = East)
-    - Vertical speed: m/s
+    P = (xₚ, yₚ, zₚ)
+    A = (xₐ, yₐ, zₐ)
+    L = (xₗ, yₗ, zₗ)
 
-    Provide the complete mathematical formulas to calculate the new latitude, longitude, and altitude,
-    taking into account the curvature of the Earth.
+    vector person towards airplane = PA = u⃗ = (xₐ - xₚ, yₐ - yₚ, zₐ - zₚ)
+    vector person towards moon = PL = v⃗ = (xₗ - xₚ, yₗ - yₚ, zₗ - zₚ)
+
+    dot product
+    u⃗ · v⃗ = (xₐ - xₚ)(xₗ - xₚ) + (yₐ - yₚ)(yₗ - yₚ) + (zₐ - zₚ)(zₗ - zₚ)
+
+
+    vectors norm
+    ||u⃗|| = √[(xₐ - xₚ)² + (yₐ - yₚ)² + (zₐ - zₚ)²]
+    ||v⃗|| = √[(xₗ - xₚ)² + (yₗ - yₚ)² + (zₗ - zₚ)²]
+
+    calculate angle O
+    O = arccos[(u⃗ · v⃗) / (||u⃗|| × ||v⃗||)]
+
+    compare the angle of the moon with that of the airplane
+    O ≤ 0.0045 (radian)
     */
-    const long = flight.long
-    const lat = flight.lat
-    const alt = flight.alt
-    const speed = flight.velocity
-    const heading = flight.heading
-    const vertical_rate = flight.vertical_rate
 
-    const pi = Math.PI;
+    const positionCartesian = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt);
 
-    // prediction time in seconds
-    const delta_time = 30;
+    const x_A = positionCartesian.x;
+    const y_A = positionCartesian.y;
+    const z_A = positionCartesian.z;
 
-    // Convert to radians
-    const long_rad = long * pi / 180
-    const lat_rad = lat * pi / 180
-    const heading_rad = heading * pi / 180
+    const cameraPos = viewer.camera.position;
+    const x_P = cameraPos.x;
+    const y_P = cameraPos.y;
+    const z_P = cameraPos.z;
 
-    const earth_radius = 6371000  // meters
 
-    // Horizontal distance traveled
-    const distance = speed * delta_time
+    let moonPos = viewer.scene.moon.position;
+    if (!moonPos) {
+        moonPos = Cesium.Simon1994PlanetaryPositions.computeMoonPositionInEarthInertialFrame(
+            viewer.clock.currentTime
+        );
+    }
 
-    // Calculate new latitude
-    const new_lat_rad = Math.asin(
-        Math.sin(lat_rad) * Math.cos(distance / earth_radius) +
-        Math.cos(lat_rad) * Math.sin(distance / earth_radius) * Math.cos(heading_rad)
-    )
+    const x_L = moonPos.x;
+    const y_L = moonPos.y;
+    const z_L = moonPos.z;
 
-    // Calculate new longitude
-    const delta_long = Math.atan2(
-        Math.sin(heading_rad) * Math.sin(distance / earth_radius) * Math.cos(lat_rad),
-        Math.cos(distance / earth_radius) - Math.sin(lat_rad) * Math.sin(new_lat_rad)
-    )
-    const new_long_rad = long_rad + delta_long
+    const P_To_A = {
+        x: x_A - x_P,
+        y: y_A - y_P,
+        z: z_A - z_P
+    };
 
-    // Calculate new altitude
-    const new_alt = alt + vertical_rate * delta_time
+    const P_To_L = {
+        x: x_L - x_P,
+        y: y_L - y_P,
+        z: z_L - z_P
+    };
 
-    // Convert result back to degrees
-    const new_lat = new_lat_rad * 180 / pi
-    const new_long = new_long_rad * 180 / pi
+    const dot = (x_A - x_P)*(x_L-x_P) + (y_A-y_P)*(y_L-y_P) + (z_A-z_P)*(z_L-z_P)
 
-    // Return predicted position
-    return Cesium.Cartesian3.fromDegrees(new_long, new_lat, new_alt);
+    const norme_u = Math.sqrt((x_A - x_P)**2 + (y_A-y_P)**2 + (z_A-z_P)**2);
+    const norme_v = Math.sqrt((x_L - x_P)**2 + (y_L-y_P)**2 + (z_L-z_P)**2);
+
+    const corner_O = Math.acos(dot / (norme_u * norme_v));
+
+    if (corner_O <= 0.0045) {
+        console.log("Avion devant la lune !!!!")
+    }
 }
-
-
 async function addNewPlanes(viewer, data){
     const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
     data.forEach(async (flight) => {
