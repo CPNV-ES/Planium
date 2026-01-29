@@ -1,6 +1,16 @@
 <script setup>
 import {computed, onMounted, onUnmounted, ref, watch} from 'vue';
-import {loadPlanes, updatePlanes} from "@/utils/scene.js";
+// import {loadPlanes, updatePlanes} from "@/utils/scene.js"; // plane api functions (commented methods to save GPU power)
+
+/*
+Moon Mini Viewer summary description:
+  1 - Displays the Moon in a dedicated Cesium viewer (separate to "Viewer.vue").
+  2 - Receives data from main viewer (mainViewer, Cesium, moonPos, planes) to ensure coherence between viewers.
+  3 - Camera direction is locked to the Moon.
+  4 - Camera position is the same as main Viewer.
+  5 - Yellow reticle around Moon is fixed (doesn't track Moon's position, Viewer does automatically)
+  6 - Plane display is currently disabled (double viewer render freezes web app because of GPU overload)
+ */
 
 // data from Viewer.vue
 const props = defineProps({
@@ -10,13 +20,16 @@ const props = defineProps({
   planes: Array       // pass plane data
 });
 
+// initialize containers
 const miniViewerContainer = ref(null);
 let miniViewer = null;
 let syncLayers = null;
 
+// Moon constants
 const moonRadius = 1737400 // meters
 const moonWidthMultiplier = ref(6); // zoom width (Moon's diameters, default: 6 Moons)
 
+// reticle responsive style (reacts to Moon's size)
 const reticleStyle = computed(() => { // adjust reticle to moon's size
   const size = (400 / moonWidthMultiplier.value) + 2; // proportion (ex. 2 Moons wide, reticle = 202x202px)
   return {
@@ -25,35 +38,37 @@ const reticleStyle = computed(() => { // adjust reticle to moon's size
   };
 });
 
-// point miniViewer's camera to Moon reactively
+// points miniViewer's camera to Moon reactively
 function updateMiniView() {
+  // safety checks
   if (!props.moonPos || !miniViewer || !miniViewer.scene || miniViewer.isDestroyed() || !props.mainViewer.camera.position) return
 
+  // props storage for reference
   const Cesium = props.Cesium
   const mainCamera = props.mainViewer.camera
 
   // calculate direction vector from main camera to Moon
-  const moonDirection = Cesium.Cartesian3.subtract(props.moonPos, mainCamera.position, new Cesium.Cartesian3());
-  const distanceToMoon = Cesium.Cartesian3.magnitude(moonDirection);
-  Cesium.Cartesian3.normalize(moonDirection, moonDirection);
+  const moonDirection = Cesium.Cartesian3.subtract(props.moonPos, mainCamera.position, new Cesium.Cartesian3()); // get direction subtracting cartesian positions
+  const distanceToMoon = Cesium.Cartesian3.magnitude(moonDirection); // get distance (vector's length)
+  Cesium.Cartesian3.normalize(moonDirection, moonDirection); // get unit vector (normalize vector)
 
-  // set miniViewer's camera to same position as mainCamera but pointing the Moon
+  // set miniViewer's camera to same position as mainCamera, but pointing the Moon
   miniViewer.camera.setView({
-    destination: mainCamera.position,
+    destination: mainCamera.position, // original main viewer's camera cartesian coordinates
     orientation: {
-      direction: moonDirection,
-      up: mainCamera.up
+      direction: moonDirection, // calculated vector pointing to the Moon
+      up: mainCamera.up // original main viewer camera's up vector
     }
   });
 
-  // sync clock to mainViewer's
+  // sync clock to mainViewer's for coherence
   miniViewer.clock.currentTime = props.mainViewer.clock.currentTime;
 
-  // calculate Moon's angular width
-  // help of GEMINI
+  // calculate Moon's angular width :
+  // (help of GEMINI)
   // opp side: moonRadius, adj side: distanceToMoon, angle: half Moon
-  // tan = opp/adj, angle = inverse tan (atan)
-  // multiply by 2 to get full width
+  // 1. tan = opp/adj, angle = atan(opp/adj), atan is inverse tan
+  // 2. multiply by 2 to get full width
   const moonAngularSize = 2 * Math.atan(moonRadius / distanceToMoon)
   miniViewer.camera.frustum.fov = moonAngularSize * moonWidthMultiplier.value // adjust "Field of View" to zoom
 }
@@ -64,9 +79,9 @@ onMounted(async () => {
   // initialize miniViewer
   miniViewer = new Cesium.Viewer(miniViewerContainer.value, {
     sceneMode: Cesium.SceneMode.SCENE3D,
-    terrainProvider: mainViewer.terrainProvider,
+    terrainProvider: mainViewer.terrainProvider,  // load terrains from main Viewer
     creditContainer: document.createElement('div'), // hide credits
-    // hide default UI
+    // hide default UI widgets inside viewer
     animation: false, timeline: false, geocoder: false, homeButton: false,
     infoBox: false, selectionIndicator: false, navigationHelpButton: false,
     sceneModePicker: false, fullscreenButton: false, baseLayerPicker: false,
@@ -103,11 +118,11 @@ onMounted(async () => {
 
   miniViewer.clock.currentTime = mainViewer.clock.currentTime; // sync clock
   mainViewer.camera.changed.addEventListener(updateMiniView) // sync camera
-  // await loadPlanes(miniViewer)  // load plane assets
+  // await loadPlanes(miniViewer)  // load plane assets (commented to save GPU power, doubles consumption)
 })
 
 onUnmounted(() => {
-  // help of GEMINI
+  // help of GEMINI: important prevention for security
   if (miniViewer) {
     // remove listeners to prevent memory leaks
     props.mainViewer.camera.changed.removeEventListener(updateMiniView);
@@ -122,7 +137,7 @@ onUnmounted(() => {
 watch(moonWidthMultiplier, updateMiniView);
 // react to Moon position
 watch(() => props.moonPos, updateMiniView, { deep: true });
-// react to planes data
+// react to planes data (commented to save GPU power, doubles consumption)
 // watch(() => props.planes, (newData) => {
 //   if (miniViewer) updatePlanes(miniViewer, newData);
 // }, { deep: true });
@@ -153,7 +168,7 @@ watch(() => props.moonPos, updateMiniView, { deep: true });
 </template>
 
 <style scoped>
-/* absolute positions for containers and reticle */
+/* absolute css positions for containers and reticle */
 .telescope-container {
   position: absolute;
   bottom: 24px;
