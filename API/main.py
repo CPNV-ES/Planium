@@ -11,6 +11,7 @@ from fetchFlights import get_flights
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from gmail import router as email_router
+from models.Log import Log
 
 app = FastAPI()
 
@@ -27,8 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class Log(BaseModel):
-    message: str
+
 app.include_router(email_router, prefix="/api")
 
 @app.get("/flights")
