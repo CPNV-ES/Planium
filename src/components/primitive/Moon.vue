@@ -2,7 +2,7 @@
 import { ref, onBeforeUnmount, computed } from "vue";
 
 /*
-This component defines Moon's parameters and places it to real location in real time.
+Moon.vue defines Moon's label and point of reference, and places them to its real location in real time.
  */
 
 // reactive references for Moon's visual appearance and position
