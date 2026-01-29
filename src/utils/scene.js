@@ -136,7 +136,7 @@ async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id)
         availability: new Cesium.TimeIntervalCollection([ new Cesium.TimeInterval({ start: start, stop: stop }) ]),
         position: positionProperty,
         // Attach the 3D model instead of the green point.
-        model: {uri: airplaneUri,minimumPixelSize: 100 },
+        model: {uri: airplaneUri,minimumPixelSize: 30 },
         // Automatically compute the orientation from the position.
         orientation: new Cesium.VelocityOrientationProperty(positionProperty),
         path: new Cesium.PathGraphics({ width: 3 , trailTime: 60})
@@ -148,16 +148,16 @@ export async function updatePlanes(viewer, location){
     const data = await getFLights('http://localhost:8080/flights', {long:location.long , lat: location.lat})
     if (data.length > 0){
 
-        if (data !== undefined && viewer.entities !== undefined) {
-            viewer.entities.values.forEach(async (entity) => {
+        if (viewer.entities !== undefined) {
+            for (const entity of viewer.entities.values) {
                     const flight = data.find(flight => entity.id.includes(flight.id))
-                    if(flight !== undefined){
+                    if(flight !== undefined && flight.id.includes('plane')){
                         await addNextPostion(determinatePlane(flight, 60), entity, getNextTimeBySecond(viewer, 60))
                     }else if(entity.id.includes('plane') ){
                         viewer.entities.remove(entity)
                     }
-                })
-            }
+                }
+        }
 
             await addNewPlanes(viewer, data)
         }
