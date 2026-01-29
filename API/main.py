@@ -5,9 +5,12 @@ Project : FastAPI Flights Backend
 Description: Backend service to fetch and serve live flight data using OpenSky API.
 """
 import uvicorn
+import os
 from fastapi import FastAPI, Query, HTTPException
 from fetchFlights import get_flights
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from gmail import router as email_router
 
 app = FastAPI()
 
@@ -23,6 +26,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+class Log(BaseModel):
+    message: str
+app.include_router(email_router, prefix="/api")
 
 @app.get("/flights")
 def get_flights_endpoint(
@@ -47,6 +54,29 @@ def get_flights_endpoint(
         return {"message": "No data found"}
 
     return flights
+
+@app.post("/logs")
+def write_logs(log : Log):
+    """
+    Route that writes logs to a file
+
+    :return: "message": "Logs were added"
+    """
+    # Source : https://www.docstring.fr/formations/faq/fichiers/comment-lire-et-ecrire-dans-un-fichier-en-python/
+    # Source : www.geeksforgeeks.org/python/create-a-directory-in-python/
+    # Source : https://fastapi.tiangolo.com/tutorial/body/
+
+    # Create a folder at the root
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    logs_dir = os.path.join(project_root, "Logs")
+    os.makedirs(logs_dir, exist_ok=True)
+
+    log_file_path = os.path.join(logs_dir, "log.txt")
+
+    with open(log_file_path, "a", encoding="utf-8") as log_file:
+        log_file.write(f"{log.message}\n")
+    return {"message": "Logs were added"}
 
 
 @app.get("/")
