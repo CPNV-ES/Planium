@@ -116,15 +116,14 @@ export async function loadPlanes(viewer, location){
             const position = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt);
             // Store the position along with its timestamp.
             positionProperty.addSample(start, position);
-            calculateMoonPlane(position, viewer)
             // Make planes appear even if it's too late
             positionProperty.forwardExtrapolationType = Cesium.ExtrapolationType.HOLD
             positionProperty.backwardExtrapolationType = Cesium.ExtrapolationType.HOLD
 
             await loadModel(viewer, start, stop, positionProperty, airplaneUri, flight.id);
 
-            positionProperty.addSample(getNextTimeBySecond(viewer, 30), determinatePlane(flight))
-            calculateMoonPlane(determinatePlane(flight), viewer)
+            positionProperty.addSample(getNextTimeBySecond(viewer, 60), determinatePlane(flight, 60))
+            calculateMoonPlane(flight, viewer)
         }
     }
 
@@ -138,10 +137,10 @@ async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id)
         availability: new Cesium.TimeIntervalCollection([ new Cesium.TimeInterval({ start: start, stop: stop }) ]),
         position: positionProperty,
         // Attach the 3D model instead of the green point.
-        model: {uri: airplaneUri,minimumPixelSize: 100  },
+        model: {uri: airplaneUri,minimumPixelSize: 100 },
         // Automatically compute the orientation from the position.
         orientation: new Cesium.VelocityOrientationProperty(positionProperty),
-        path: new Cesium.PathGraphics({ width: 3 , trailTime: 30})
+        path: new Cesium.PathGraphics({ width: 3 , trailTime: 60})
     });
 }
 
@@ -154,8 +153,8 @@ export async function updatePlanes(viewer, location){
             viewer.entities.values.forEach(async (entity) => {
                     const flight = data.find(flight => entity.id.includes(flight.id))
                     if(flight !== undefined){
-                        await addNextPostion(determinatePlane(flight), entity, getNextTimeBySecond(viewer, 30))
-                        calculateMoonPlane(determinatePlane(flight), viewer)
+                        await addNextPostion(determinatePlane(flight, 60), entity, getNextTimeBySecond(viewer, 60))
+                        calculateMoonPlane(flight, viewer)
                     }else if(entity.id.includes('plane') ){
                         viewer.entities.remove(entity)
                     }
@@ -178,7 +177,7 @@ function getNextTimeBySecond(viewer, seconds){
         new Cesium.JulianDate()
     );
 }
-async function sendToLogFile() {
+export async function sendToLogFile() {
     /*
     Source : https://brightdata.fr/blog/donnees-web/fetch-api-in-javascript
     */
@@ -266,7 +265,8 @@ function determinatePlane(flight, delta_time) {
 
     // Convert result back to degrees
     const new_lat = new_lat_rad * 180 / pi
-    const new_long = new_long_rad * 180 / pi
+        const new_long = new_long_rad * 180 / pi
+
 
     // Return predicted position
     return Cesium.Cartesian3.fromDegrees(new_long, new_lat, new_alt);
@@ -458,11 +458,10 @@ async function addNewPlanes(viewer, data){
             positionProperty.forwardExtrapolationType = Cesium.ExtrapolationType.HOLD
             positionProperty.backwardExtrapolationType = Cesium.ExtrapolationType.HOLD
             await loadModel(viewer, viewer.clock.currentTime, viewer.clock.stopTime, positionProperty, airplaneUri, flight.id)
-            positionProperty.addSample(getNextTimeBySecond(viewer, 30), determinatePlane(flight))
+            positionProperty.addSample(getNextTimeBySecond(viewer, 60), determinatePlane(flight, 60))
         }
     })
 }
 
 
 // Source : https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval
-setInterval(sendToLogFile,30000)
