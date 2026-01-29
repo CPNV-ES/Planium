@@ -37,7 +37,7 @@ function send(lat, lng){
           <input v-model="lng" type="number" class="input input-xs" placeholder="6.13838333" />
           </fieldset>
           <button type="submit" @click="send(lat, lng)" class="btn btn-neutral mt-8">Find</button>
-          <Email />
+<!--          <Email />-->
   </div>
   </div>
 
