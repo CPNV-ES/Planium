@@ -55,17 +55,9 @@ function onClick() {
 
 <template>
   <button
-      class="fixed bottom-6 right-6 z-[2000] bg-blue-600 text-white px-4 py-2 rounded shadow-lg"
+      class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[2000] bg-blue-600 text-white px-4 py-2 rounded shadow-lg"
       @click="onClick"
   >
     Center Moon
   </button>
 </template>
-<style>
-.fixed {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  z-index: 9999;
-}
-</style>

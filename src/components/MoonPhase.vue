@@ -138,15 +138,13 @@ const fetchMoonPhase = async (lat, lng) => {
 <template>
   <div
       v-if="isLoading || error || moonImageUrl || hasRequested"
-      class="absolute bottom-6 left-6 z-[1000] pointer-events-auto"
+      class="fixed bottom-6 right-6 z-[2000] pointer-events-auto"
   >
     <div class="bg-black/70 backdrop-blur-md border border-white/20 p-2 rounded-xl shadow-2xl transition-all hover:scale-105 duration-300 w-40">
 
       <div v-if="isLoading" class="flex flex-col items-center justify-center h-48 space-y-2">
         <div class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-        <span class="text-[10px] text-white/50 uppercase tracking-widest">
-        Loading Moon
-      </span>
+        <span class="text-[10px] text-white/50 uppercase tracking-widest">Loading Moon</span>
       </div>
 
       <div v-else-if="error" class="text-[10px] text-red-400 p-2 text-center">
