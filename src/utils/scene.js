@@ -1,6 +1,4 @@
 import {getFLights} from "@/utils/api.js";
-import fs from 'fs';
-import path from 'path';
 
 // data structure that allows logs to be stored
 // Source : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map
@@ -91,13 +89,12 @@ export async function loadPlanes(viewer, location){
           Initialize the viewer's clock by setting its start and stop to the flight start and stop times we just calculated.
           Also, set the viewer's current time to the start time and take the user to that time.
         */
-        const timeStepInSeconds = 30;
         // const totalSeconds = timeStepInSeconds * (flightData.length - 1);
         const start = Cesium.JulianDate.now();
-        const stop = Cesium.JulianDate.addSeconds(start, 10000000000, new Cesium.JulianDate());
+        const stop = Cesium.JulianDate.addSeconds(start, 86400, new Cesium.JulianDate());
 
         viewer.clock.startTime = start.clone();
-        // viewer.clock.stopTime = stop.clone();
+        viewer.clock.clockRange = Cesium.ClockRange.UNBOUNDED
         viewer.clock.currentTime = start.clone();
 
         // viewer.timeline.zoomTo(start, stop);
@@ -118,20 +115,15 @@ export async function loadPlanes(viewer, location){
 
             const position = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt);
             // Store the position along with its timestamp.
-            // Here we add the positions all upfront, but these can be added at run-time as samples are received from a server.
             positionProperty.addSample(start, position);
             // Make planes appear even if it's too late
             positionProperty.forwardExtrapolationType = Cesium.ExtrapolationType.HOLD
             positionProperty.backwardExtrapolationType = Cesium.ExtrapolationType.HOLD
 
-            // viewer.entities.add({
-            //     description: `Location: (${flight.long}, ${flight.lat}, ${flight.alt})`,
-            //     position: position,
-            //     point: {pixelSize: 10, color: Cesium.Color.RED}
-            // });
-
             await loadModel(viewer, start, stop, positionProperty, airplaneUri, flight.id);
 
+            positionProperty.addSample(getNextTimeBySecond(viewer, 60), determinatePlane(flight, 60))
+            calculateMoonPlane(flight, viewer)
         }
     }
 
@@ -140,50 +132,52 @@ export async function loadPlanes(viewer, location){
 
 async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id) {
     // Load the glTF model from Cesium ion.
-    const airplaneEntity = viewer.entities.add({
-        id: id,
+    viewer.entities.add({
+        id: "plane_" + id,
         availability: new Cesium.TimeIntervalCollection([ new Cesium.TimeInterval({ start: start, stop: stop }) ]),
         position: positionProperty,
         // Attach the 3D model instead of the green point.
-        model: {uri: airplaneUri,minimumPixelSize: 100  },
+        model: {uri: airplaneUri,minimumPixelSize: 100 },
         // Automatically compute the orientation from the position.
         orientation: new Cesium.VelocityOrientationProperty(positionProperty),
-        path: new Cesium.PathGraphics({ width: 3 , trailTime: 30})
+        path: new Cesium.PathGraphics({ width: 3 , trailTime: 60})
     });
 }
 
 export async function updatePlanes(viewer, location){
+
     const data = await getFLights('http://localhost:8080/flights', {long:location.long , lat: location.lat})
     if (data.length > 0){
-        const futureTime = Cesium.JulianDate.addSeconds(
-            viewer.clock.currentTime,
-            31,
-            new Cesium.JulianDate()
-        );
+
         if (data !== undefined && viewer.entities !== undefined) {
             viewer.entities.values.forEach(async (entity) => {
-                const flight = data.find(flight => flight.id === entity.id)
-                if(flight !== undefined){
-                    await addNextPostion(flight, entity, futureTime)
-                }else if(entity.id !== 'Moon'){
-                    viewer.entities.remove(entity)
-                }
-
-            })
+                    const flight = data.find(flight => entity.id.includes(flight.id))
+                    if(flight !== undefined){
+                        await addNextPostion(determinatePlane(flight, 60), entity, getNextTimeBySecond(viewer, 60))
+                        calculateMoonPlane(flight, viewer)
+                    }else if(entity.id.includes('plane') ){
+                        viewer.entities.remove(entity)
+                    }
+                })
+            }
 
             await addNewPlanes(viewer, data)
         }
     }
 
-}
 
-async function addNextPostion(flight, entity, futureTime){
-    const time = Cesium.JulianDate.now();
-    const nextPos = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
+async function addNextPostion(nextPos, entity, futureTime){
     entity.position.addSample(futureTime, nextPos)
 }
 
-async function sendToLogFile() {
+function getNextTimeBySecond(viewer, seconds){
+    return Cesium.JulianDate.addSeconds(
+        viewer.clock ? viewer.clock.currentTime : Cesium.JulianDate.now(),
+        seconds,
+        new Cesium.JulianDate()
+    );
+}
+export async function sendToLogFile() {
     /*
     Source : https://brightdata.fr/blog/donnees-web/fetch-api-in-javascript
     */
@@ -218,7 +212,8 @@ async function sendToLogFile() {
 }
 
 
-function determinatePlane(flight) {
+
+function determinatePlane(flight, delta_time) {
     /*
         Prompt to Claude :
         I want to predict the geographical position of an aircraft in 30 seconds.
@@ -231,7 +226,7 @@ function determinatePlane(flight) {
 
         Provide the complete mathematical formulas to calculate the new latitude, longitude, and altitude,
         taking into account the curvature of the Earth.
-        */
+    */
     const long = flight.long
     const lat = flight.lat
     const alt = flight.alt
@@ -241,8 +236,6 @@ function determinatePlane(flight) {
 
     const pi = Math.PI;
 
-    // prediction time in seconds
-    const delta_time = 30;
 
     // Convert to radians
     const long_rad = long * pi / 180
@@ -272,7 +265,8 @@ function determinatePlane(flight) {
 
     // Convert result back to degrees
     const new_lat = new_lat_rad * 180 / pi
-    const new_long = new_long_rad * 180 / pi
+        const new_long = new_long_rad * 180 / pi
+
 
     // Return predicted position
     return Cesium.Cartesian3.fromDegrees(new_long, new_lat, new_alt);
@@ -281,35 +275,27 @@ function determinatePlane(flight) {
 function calculateMoonPlane(flight,viewer) {
     /*
     Prompt to Claude :
-    If I have a person (P), a plane (A), and the moon (L), I would like to know if the plane is in front of the moon
-    from P's point of view. Please provide the formulas needed for this calculation.
+    If I have a person P (with coordinates x, y, z),
+    a line segment representing the trajectory of an airplane from 0 to 60 seconds (points A_Now and A_Prediction),
+    and the moon L (x, y, z),
 
-    P = (xₚ, yₚ, zₚ)
-    A = (xₐ, yₐ, zₐ)
-    L = (xₗ, yₗ, zₗ)
+    I would like to know if the airplane passes in front of the moon from P's point of view at any point during those
+    60 seconds
 
-    vector person towards airplane = PA = u⃗ = (xₐ - xₚ, yₐ - yₚ, zₐ - zₚ)
-    vector person towards moon = PL = v⃗ = (xₗ - xₚ, yₗ - yₚ, zₗ - zₚ)
-
-    dot product
-    u⃗ · v⃗ = (xₐ - xₚ)(xₗ - xₚ) + (yₐ - yₚ)(yₗ - yₚ) + (zₐ - zₚ)(zₗ - zₚ)
-
-
-    vectors norm
-    ||u⃗|| = √[(xₐ - xₚ)² + (yₐ - yₚ)² + (zₐ - zₚ)²]
-    ||v⃗|| = √[(xₗ - xₚ)² + (yₗ - yₚ)² + (zₗ - zₚ)²]
-
-    calculate angle O
-    O = arccos[(u⃗ · v⃗) / (||u⃗|| × ||v⃗||)]
-
-    compare the angle of the moon with that of the airplane
-    O ≤ 0.0045 (radian)
+    Please provide the detailed mathematical formulas needed to calculate that.
     */
-    const positionCartesian = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt);
 
-    const x_A = positionCartesian.x;
-    const y_A = positionCartesian.y;
-    const z_A = positionCartesian.z;
+    const positionFlightNow = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt);
+
+    const x_A_Now = positionFlightNow.x;
+    const y_A_Now = positionFlightNow.y;
+    const z_A_Now = positionFlightNow.z;
+
+    const positionFlightPrediction = determinatePlane(flight, 60)
+
+    const x_A_Predict = positionFlightPrediction.x;
+    const y_A_Predict = positionFlightPrediction.y;
+    const z_A_Predict = positionFlightPrediction.z;
 
     const cameraPos = viewer.camera.position;
     const x_P = cameraPos.x;
@@ -328,58 +314,154 @@ function calculateMoonPlane(flight,viewer) {
     const y_L = moonPos.y;
     const z_L = moonPos.z;
 
-    const P_To_A = {
-        x: x_A - x_P,
-        y: y_A - y_P,
-        z: z_A - z_P
-    };
-
+    // P_To_L = P To Moon
+    // the direction is the moon
     const P_To_L = {
         x: x_L - x_P,
         y: y_L - y_P,
         z: z_L - z_P
     };
 
-    const dot = (x_A - x_P)*(x_L-x_P) + (y_A-y_P)*(y_L-y_P) + (z_A-z_P)*(z_L-z_P)
+    // P_To_A_Now
+    // The direction of the plane now
+    const P_To_A_Now = {
+        x: x_A_Now - x_P,
+        y: y_A_Now - y_P,
+        z: z_A_Now - z_P
+    };
 
-    const norme_u = Math.sqrt((x_A - x_P)**2 + (y_A-y_P)**2 + (z_A-z_P)**2);
-    const norme_v = Math.sqrt((x_L - x_P)**2 + (y_L-y_P)**2 + (z_L-z_P)**2);
+    // the direction of the prediction
+    const A_Now_To_A_Pred = {
+        x: x_A_Predict - x_A_Now,
+        y: y_A_Predict - y_A_Now,
+        z: z_A_Predict - z_A_Now
+    };
 
-    const corner_O = Math.acos(dot / (norme_u * norme_v));
+    // normalize moon direction
+    // distance between the observer and the moon
+    const norm_P_To_L = Math.sqrt(
+        P_To_L.x ** 2 +
+        P_To_L.y ** 2 +
+        P_To_L.z ** 2
+    )
+
+    // keep only the direction
+    const u_L = {
+        x: P_To_L.x / norm_P_To_L,
+        y: P_To_L.y / norm_P_To_L,
+        z: P_To_L.z / norm_P_To_L
+    };
+
+    // Dot product: P_To_A_Now · u_L
+    // how far the plane is already pointing towards the moon
+    const P_To_A_Now_dot_u_L =
+        P_To_A_Now.x * u_L.x +
+        P_To_A_Now.y * u_L.y +
+        P_To_A_Now.z * u_L.z;
+
+    // Dot product: A_Now_To_A_Pred · u_L
+    // indicates whether the aircraft is moving towards or away from the lunar direction.
+    const A_Now_To_A_Pred_dot_u_L =
+        A_Now_To_A_Pred.x * u_L.x +
+        A_Now_To_A_Pred.y * u_L.y +
+        A_Now_To_A_Pred.z * u_L.z;
+
+    // time the plane is closest to the moon
+    let t_closest;
+
+    // handle cases where the result is almost zero
+    const epsilon = 1e-10;
+
+    if (Math.abs(A_Now_To_A_Pred_dot_u_L) < epsilon) {
+        // Trajectory perpendicular to moon direction
+        t_closest = 0;
+
+    } else {
+        // calculate the moment when the plane will be closest to the moon.
+        const t_star = -60 * P_To_A_Now_dot_u_L / A_Now_To_A_Pred_dot_u_L;
+        // limit the result between 0 and 60 seconds
+        t_closest = Math.max(0, Math.min(60, t_star));
+    }
+
+
+    // Converts time into a ratio between 0 and 1.
+    const t_ratio = t_closest / 60;
+
+    // calculates the position of the plane at the moment when the plane is closest to the moon
+    const P_To_A_At_t_closest = {
+        x: P_To_A_Now.x + t_ratio * A_Now_To_A_Pred.x,
+        y: P_To_A_Now.y + t_ratio * A_Now_To_A_Pred.y,
+        z: P_To_A_Now.z + t_ratio * A_Now_To_A_Pred.z
+    };
+
+    // calculate the length of the observer vector
+    const norm_P_To_A_At_t_closest = Math.sqrt(
+        P_To_A_At_t_closest.x ** 2 +
+        P_To_A_At_t_closest.y ** 2 +
+        P_To_A_At_t_closest.z ** 2
+    );
+
+    // in order to calculate the angle between the two directions
+    const dot_product =
+        P_To_A_At_t_closest.x * P_To_L.x +
+        P_To_A_At_t_closest.y * P_To_L.y +
+        P_To_A_At_t_closest.z * P_To_L.z;
+
+    // calculate the cosine of the angle between the two directions
+    /*
+    cos(0°) = 1 → same directions
+    cos(90°) = 0 → perpendicular directions
+    cos(180°) = -1 → opposite directions
+    */
+    const cos_theta = dot_product / (norm_P_To_A_At_t_closest * norm_P_To_L);
+
+
+    // we force the value into the valid range
+    const cos_theta_clamped = Math.max(-1, Math.min(1, cos_theta));
+
+    // Calculate the angle in radians between the direction of the plane and the direction of the moon.
+    const corner_O = Math.acos(cos_theta_clamped);
+
+    const moonAngularRadius = 0.0045
+    const closeTheMoon = 0.0135
 
     // Source : https://developer.mozilla.org/fr/docs/Web/JavaScript/Reference/Global_Objects/Map/has
     const key = `${flight.id}`
 
     const currentLog = logs.get(flight.id);
 
-    if (corner_O <= 0.0045) {
+    if (corner_O <= moonAngularRadius) {
         if (!currentLog) {
+            const closestDate = new Date(Date.now() + t_closest * 1000);
+            const logTime = closestDate.toISOString();
             logs.set(key, `Aircraft pass in front of the moon | Camera : ${cameraPos} | Aircraft ID : ${flight.id} 
-            | Time : ${new Date().toISOString()}`);
+            | Time : ${logTime}`);
         }
-    } else if (corner_O <= 0.0135) {
+    } else if (corner_O <= closeTheMoon) {
         // Source : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/startsWith
         if (!currentLog || !currentLog.startsWith("Aircraft pass in front")) {
+            const closestDate = new Date(Date.now() + t_closest * 1000);
+            const logTime = closestDate.toISOString();
             logs.set(key, `Aircraft pass close to the moon | Camera : ${cameraPos} | Aircraft ID : ${flight.id} 
-            | Time : ${new Date().toISOString()}`);
+            | Time : ${logTime}`);
         }
     }
-
 }
+
 async function addNewPlanes(viewer, data){
     const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
     data.forEach(async (flight) => {
-        if (viewer.entities.values.find(entity => entity.id === flight.id) === undefined){
+        if (viewer.entities.values.find(entity => entity.id.includes(flight.id)) === undefined){
             const positionProperty = new Cesium.SampledPositionProperty();
             const position = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
             positionProperty.addSample(viewer.clock.currentTime, position);
             positionProperty.forwardExtrapolationType = Cesium.ExtrapolationType.HOLD
             positionProperty.backwardExtrapolationType = Cesium.ExtrapolationType.HOLD
             await loadModel(viewer, viewer.clock.currentTime, viewer.clock.stopTime, positionProperty, airplaneUri, flight.id)
+            positionProperty.addSample(getNextTimeBySecond(viewer, 60), determinatePlane(flight, 60))
         }
     })
 }
 
+
 // Source : https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval
-// Send the logs every 15 seconds
-setInterval(sendToLogFile, 15000)
