@@ -120,13 +120,13 @@ async function onLocationSubmitted(e){
           :cesium="cesium"
           :moonComponent="moonComponentRef"
       />
-<!--      <MoonMiniViewer-->
-<!--          v-if="cesium && mapViewer"-->
-<!--          :mainViewer="mapViewer"-->
-<!--          :Cesium="cesium"-->
-<!--          :moonPos="moonComponentRef?.moonPos"-->
-<!--          :planes="planeData"-->
-<!--      />-->
+      <MoonMiniViewer
+          v-if="cesium && mapViewer"
+          :mainViewer="mapViewer"
+          :Cesium="cesium"
+          :moonPos="moonComponentRef?.moonPos"
+          :planes="planeData"
+      />
       <CameraController v-if="isViewerReady" :viewer="mapViewer" />
       <CompassIndicator v-if="isViewerReady" :viewer="mapViewer" />
       <CoordinateForm @submit="onLocationSubmitted"/>
