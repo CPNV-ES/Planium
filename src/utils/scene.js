@@ -148,7 +148,7 @@ export async function updatePlanes(viewer, location){
     const data = await getFLights('http://localhost:8080/flights', {long:location.long , lat: location.lat})
     if (data.length > 0){
 
-        if (data !== undefined && viewer.entities !== undefined) {
+        if (viewer.entities !== undefined) {
             viewer.entities.values.forEach(async (entity) => {
                     const flight = data.find(flight => entity.id.includes(flight.id))
                     if(flight !== undefined){
