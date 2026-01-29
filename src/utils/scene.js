@@ -89,13 +89,12 @@ export async function loadPlanes(viewer, location){
           Initialize the viewer's clock by setting its start and stop to the flight start and stop times we just calculated.
           Also, set the viewer's current time to the start time and take the user to that time.
         */
-        const timeStepInSeconds = 30;
         // const totalSeconds = timeStepInSeconds * (flightData.length - 1);
         const start = Cesium.JulianDate.now();
-        const stop = Cesium.JulianDate.addSeconds(start, 10000000000, new Cesium.JulianDate());
+        const stop = Cesium.JulianDate.addSeconds(start, 86400, new Cesium.JulianDate());
 
         viewer.clock.startTime = start.clone();
-        // viewer.clock.stopTime = stop.clone();
+        viewer.clock.clockRange = Cesium.ClockRange.UNBOUNDED
         viewer.clock.currentTime = start.clone();
 
         // viewer.timeline.zoomTo(start, stop);
@@ -116,20 +115,15 @@ export async function loadPlanes(viewer, location){
 
             const position = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt);
             // Store the position along with its timestamp.
-            // Here we add the positions all upfront, but these can be added at run-time as samples are received from a server.
             positionProperty.addSample(start, position);
             // Make planes appear even if it's too late
             positionProperty.forwardExtrapolationType = Cesium.ExtrapolationType.HOLD
             positionProperty.backwardExtrapolationType = Cesium.ExtrapolationType.HOLD
 
-            // viewer.entities.add({
-            //     description: `Location: (${flight.long}, ${flight.lat}, ${flight.alt})`,
-            //     position: position,
-            //     point: {pixelSize: 10, color: Cesium.Color.RED}
-            // });
-
             await loadModel(viewer, start, stop, positionProperty, airplaneUri, flight.id);
 
+            positionProperty.addSample(getNextTimeBySecond(viewer, 60), determinatePlane(flight, 60))
+            calculateMoonPlane(flight, viewer)
         }
     }
 
@@ -138,50 +132,52 @@ export async function loadPlanes(viewer, location){
 
 async function loadModel(viewer, start, stop, positionProperty, airplaneUri, id) {
     // Load the glTF model from Cesium ion.
-    const airplaneEntity = viewer.entities.add({
-        id: id,
+    viewer.entities.add({
+        id: "plane_" + id,
         availability: new Cesium.TimeIntervalCollection([ new Cesium.TimeInterval({ start: start, stop: stop }) ]),
         position: positionProperty,
         // Attach the 3D model instead of the green point.
-        model: {uri: airplaneUri,minimumPixelSize: 100  },
+        model: {uri: airplaneUri,minimumPixelSize: 100 },
         // Automatically compute the orientation from the position.
         orientation: new Cesium.VelocityOrientationProperty(positionProperty),
-        path: new Cesium.PathGraphics({ width: 3 , trailTime: 30})
+        path: new Cesium.PathGraphics({ width: 3 , trailTime: 60})
     });
 }
 
 export async function updatePlanes(viewer, location){
+
     const data = await getFLights('http://localhost:8080/flights', {long:location.long , lat: location.lat})
     if (data.length > 0){
-        const futureTime = Cesium.JulianDate.addSeconds(
-            viewer.clock.currentTime,
-            31,
-            new Cesium.JulianDate()
-        );
+
         if (data !== undefined && viewer.entities !== undefined) {
             viewer.entities.values.forEach(async (entity) => {
-                const flight = data.find(flight => flight.id === entity.id)
-                if(flight !== undefined){
-                    await addNextPostion(flight, entity, futureTime)
-                }else if(entity.id !== 'Moon'){
-                    viewer.entities.remove(entity)
-                }
-
-            })
+                    const flight = data.find(flight => entity.id.includes(flight.id))
+                    if(flight !== undefined){
+                        await addNextPostion(determinatePlane(flight, 60), entity, getNextTimeBySecond(viewer, 60))
+                        calculateMoonPlane(flight, viewer)
+                    }else if(entity.id.includes('plane') ){
+                        viewer.entities.remove(entity)
+                    }
+                })
+            }
 
             await addNewPlanes(viewer, data)
         }
     }
 
-}
 
-async function addNextPostion(flight, entity, futureTime){
-    const time = Cesium.JulianDate.now();
-    const nextPos = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
+async function addNextPostion(nextPos, entity, futureTime){
     entity.position.addSample(futureTime, nextPos)
 }
 
-async function sendToLogFile() {
+function getNextTimeBySecond(viewer, seconds){
+    return Cesium.JulianDate.addSeconds(
+        viewer.clock ? viewer.clock.currentTime : Cesium.JulianDate.now(),
+        seconds,
+        new Cesium.JulianDate()
+    );
+}
+export async function sendToLogFile() {
     /*
     Source : https://brightdata.fr/blog/donnees-web/fetch-api-in-javascript
     */
@@ -269,7 +265,8 @@ function determinatePlane(flight, delta_time) {
 
     // Convert result back to degrees
     const new_lat = new_lat_rad * 180 / pi
-    const new_long = new_long_rad * 180 / pi
+        const new_long = new_long_rad * 180 / pi
+
 
     // Return predicted position
     return Cesium.Cartesian3.fromDegrees(new_long, new_lat, new_alt);
@@ -454,17 +451,17 @@ function calculateMoonPlane(flight,viewer) {
 async function addNewPlanes(viewer, data){
     const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
     data.forEach(async (flight) => {
-        if (viewer.entities.values.find(entity => entity.id === flight.id) === undefined){
+        if (viewer.entities.values.find(entity => entity.id.includes(flight.id)) === undefined){
             const positionProperty = new Cesium.SampledPositionProperty();
             const position = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
             positionProperty.addSample(viewer.clock.currentTime, position);
             positionProperty.forwardExtrapolationType = Cesium.ExtrapolationType.HOLD
             positionProperty.backwardExtrapolationType = Cesium.ExtrapolationType.HOLD
             await loadModel(viewer, viewer.clock.currentTime, viewer.clock.stopTime, positionProperty, airplaneUri, flight.id)
+            positionProperty.addSample(getNextTimeBySecond(viewer, 60), determinatePlane(flight, 60))
         }
     })
 }
 
 
 // Source : https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval
-setInterval(sendToLogFile,30000)

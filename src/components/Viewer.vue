@@ -1,7 +1,7 @@
 <script setup>
 import {VcViewer} from "vue-cesium";
 import {nextTick, ref} from "vue";
-import {loadPlanes, updatePlanes, prepareScene, removeMoving} from "@/utils/scene.js";
+import {loadPlanes, updatePlanes, prepareScene, removeMoving, sendToLogFile} from "@/utils/scene.js";
 import Imagery from "@/components/imagery/Imagery.vue";
 import {flyTo} from "@/utils/camera.js";
 import Navigation from "@/components/navigation/Navigation.vue";
@@ -61,8 +61,9 @@ const onViewerReady = async ({Cesium, viewer}) => {
       setInterval(async () => {
         if (mapViewer.value !== undefined){
           await updatePlanes(mapViewer.value, location.value)
+          await sendToLogFile()
         }
-      }, 30000)
+      }, 59000)
 
     } catch (error) {
       console.error("Error loading tileset:", error);
