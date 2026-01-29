@@ -1,10 +1,24 @@
 <script setup>
-import { ref } from "vue";
-import {sendTestEmail} from "@/utils/mail.js";
-
+import {onMounted, ref, watch} from "vue";
+import {getEmail, saveEmail, sendEmail} from "@/utils/mail.js";
+const displayed = ref(true)
 const emailCheck = ref(false); // flag: is "Receive..." box checked?
 const user_email = ref(""); // stores user's email
 
+onMounted(() => {
+  const storedEmail = getEmail()
+
+  if (storedEmail && storedEmail.trim() !== "") {
+    user_email.value = storedEmail;
+    displayed.value = false
+  }
+});
+
+watch(displayed, (newValue) => {
+    if (newValue){
+      user_email.value = getEmail()
+    }
+})
 </script>
 <!-----------------------------------------This is a component to test the email sender manually-------------------------->
 <template>
