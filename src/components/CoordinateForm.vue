@@ -20,7 +20,7 @@ const emit = defineEmits({
 })
 
 function send(lat, lng){
-  emit('submit', { lat, lng: lng })
+  emit('submit', { lat, long: lng })
 }
 </script>
 
