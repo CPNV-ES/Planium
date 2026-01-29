@@ -1,27 +1,45 @@
 <script setup>
-import MapPreview from "@/components/mapPreview.vue";
 import {ref} from "vue";
-// Check later to use the given inputs for location
-const lat = ref(0.0)
-const lng = ref(0.0)
+import Email from "@/components/notification/Email.vue"
+
+const lat = ref(0)
+const lng = ref(0)
+
+const emit = defineEmits({
+  click: null,
+
+  // Validate submit event
+  submit: ({ lat, lng }) => {
+    if (typeof lat === 'number' && typeof lng === 'number') {
+      return true
+    } else {
+      console.warn('Invalid submit event payload!')
+      return false
+    }
+  }
+})
+
+function send(lat, lng){
+  emit('submit', { lat, lng: lng })
+}
 </script>
 
 <template>
-      <div class="px-6 text-center lg:text-left">
-        <h1 class="text-center py-2 text-5xl font-bold">Planium</h1>
-      </div>
-      <div class="bg-base-100 w-full max-w-sm shrink-0 px-6">
-        <div class="">
-          <fieldset class="fieldset">
-            <label class="label">Latitude</label>
-            <input @input="lat" type="text" class="input" placeholder="0.0.0.0" />
-            <label class="label">Longitude</label>
-            <input @input="lng" type="text" class="input" placeholder="0.0.0.0" />
-            <button class="btn btn-neutral mt-4">Find</button>
-          </fieldset>
-        </div>
-      </div>
-  <div id="cesiumContainer" class="px-6 w-full">
-    <mapPreview :lng :lat />
+  <div class="absolute top-18 left-[1%] z-10000 flex flex-col gap-2 w-80 bg-transparent ">
+    <div class=" flex flex-row w-xl justify-between items-center bg-white/20 backdrop-blur-sm rounded-box shadow-lg px-2">
+      <fieldset class="flex flex-col gap-1">
+      <label class="label">Latitude</label>
+      <input v-model="lat" type="number" class="input input-xs" placeholder="42.161836383" />
+        </fieldset>
+
+      <fieldset class="flex flex-col gap-1">
+      <label class="label">Longitude</label>
+      <input v-model="lng" type="number" class="input input-xs" placeholder="6.13838333" />
+      </fieldset>
+      <button type="submit" @click="send(lat, lng)" class="btn btn-neutral mt-8">Find</button>
+    </div>
+    <div class="bg-white/20 backdrop-blur-md rounded-xl shadow-lg p-4 border border-white/10 flex flex-col gap-3">      <Email />
+    </div>
   </div>
+
 </template>
