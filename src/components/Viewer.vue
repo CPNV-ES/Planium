@@ -51,7 +51,13 @@ const onViewerReady = async ({Cesium, viewer}) => {
         console.error("Moon Component Ref is NULL. Check if Moon is inside a v-if.");
       }
 
-      location.value = await getLocation(viewer)
+      try {
+        location.value = await getLocation(viewer)
+      } catch (geoError) {
+        console.warn("Geolocation denied, using default coordinates (Ste-Croix).");
+        location.value = {lat: 46.8221, long: 6.5015}
+      }
+
       mapViewer.value = viewer
       cesium.value = Cesium
 
@@ -72,9 +78,17 @@ const onViewerReady = async ({Cesium, viewer}) => {
 };
 
 async function onLocationSubmitted(e){
-  flyTo(mapViewer.value.camera, cesium.value, e.lat, e.long)
-  location.value = {lat: e.lat, long: e.long}
-  await updatePlanes(mapViewer.value, location.value)
+  if (!mapViewer.value || !cesium.value) {
+    console.log("Viewer not ready yet. Please wait.");
+    return;
+  }
+  try {
+    flyTo(mapViewer.value.camera, cesium.value, e.lat, e.lng)
+    location.value = {lat: e.lat, long: e.lng}
+    await updatePlanes(mapViewer.value, location.value)
+  } catch (e) {
+    console.error("Flight failed:", e)
+  }
 }
 
 </script>
