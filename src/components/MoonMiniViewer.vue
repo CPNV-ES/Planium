@@ -50,6 +50,7 @@ function updateMiniView() {
   miniViewer.clock.currentTime = props.mainViewer.clock.currentTime;
 
   // calculate Moon's angular width
+  // help of GEMINI
   // opp side: moonRadius, adj side: distanceToMoon, angle: half Moon
   // tan = opp/adj, angle = inverse tan (atan)
   // multiply by 2 to get full width
@@ -80,7 +81,7 @@ onMounted(async () => {
 
   // safe prevention to 'rectangles error' (when Cesium tries rendering a layer before ImageryProvider is ready)
   syncLayers = () => {
-    // with GEMINI
+    // by GEMINI
     try{
       if (mainViewer.imageryLayers.length > 0) {
         const primaryLayer = mainViewer.imageryLayers.get(0) // first layer (base layer)
@@ -106,7 +107,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  // GEMINI
+  // help of GEMINI
   if (miniViewer) {
     // remove listeners to prevent memory leaks
     props.mainViewer.camera.changed.removeEventListener(updateMiniView);
