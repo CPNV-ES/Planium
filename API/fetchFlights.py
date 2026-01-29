@@ -74,7 +74,7 @@ def get_flights(user_lat, user_long):
     params = {
         "lamin": user_lat-0.52,
         "lomin": user_long-1,
-        "lamax": user_lat,
+        "lamax": user_lat+1,
         "lomax": user_long+1
     }
     token = get_opensky_token()
