@@ -38,8 +38,7 @@ function send(lat, lng){
       </fieldset>
       <button type="submit" @click="send(lat, lng)" class="btn btn-neutral mt-8">Find</button>
     </div>
-    <div class="bg-white/20 backdrop-blur-md rounded-xl shadow-lg p-4 border border-white/10 flex flex-col gap-3">      <Email />
-    </div>
+    <Email />
   </div>
 
 </template>
