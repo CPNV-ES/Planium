@@ -91,7 +91,7 @@ export async function loadPlanes(viewer, location){
         */
         // const totalSeconds = timeStepInSeconds * (flightData.length - 1);
         const start = Cesium.JulianDate.now();
-        const stop = Cesium.JulianDate.addSeconds(start, 10000000000, new Cesium.JulianDate());
+        const stop = Cesium.JulianDate.addSeconds(start, 86400, new Cesium.JulianDate());
 
         viewer.clock.startTime = start.clone();
         // viewer.clock.stopTime = stop.clone();
