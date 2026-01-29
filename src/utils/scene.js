@@ -465,4 +465,6 @@ async function addNewPlanes(viewer, data){
     })
 }
 
+
+// Source : https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval
 setInterval(sendToLogFile,30000)
