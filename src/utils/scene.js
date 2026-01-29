@@ -123,7 +123,6 @@ export async function loadPlanes(viewer, location){
             await loadModel(viewer, start, stop, positionProperty, airplaneUri, flight.id);
 
             positionProperty.addSample(getNextTimeBySecond(viewer, 60), determinatePlane(flight, 60))
-            calculateMoonPlane(flight, viewer)
         }
     }
 
@@ -154,7 +153,6 @@ export async function updatePlanes(viewer, location){
                     const flight = data.find(flight => entity.id.includes(flight.id))
                     if(flight !== undefined){
                         await addNextPostion(determinatePlane(flight, 60), entity, getNextTimeBySecond(viewer, 60))
-                        calculateMoonPlane(flight, viewer)
                     }else if(entity.id.includes('plane') ){
                         viewer.entities.remove(entity)
                     }
@@ -463,5 +461,12 @@ async function addNewPlanes(viewer, data){
     })
 }
 
+export function checkIfPlaneIsCloseToTheMoon(viewer) {
+    viewer.entities.values.forEach(entity => {
+        if (entity.id.includes('plane')) {
+            calculateMoonPlane(entity, viewer)
+        }
+    })
+}
 
 // Source : https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval
