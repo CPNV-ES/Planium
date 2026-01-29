@@ -2,8 +2,7 @@ import smtplib
 import os
 from email.message import EmailMessage
 from fastapi import APIRouter, HTTPException, Body
-from pydantic import BaseModel
-from models import EmailRequest
+from models.EmailRequest import EmailRequest
 
 router = APIRouter()
 
