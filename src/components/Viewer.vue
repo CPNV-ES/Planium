@@ -75,7 +75,7 @@ const onViewerReady = async ({Cesium, viewer}) => {
       }, 59000)
 
       setInterval(async () => {
-        checkIfPlaneIsCloseToTheMoon(viewer)
+        await checkIfPlaneIsCloseToTheMoon(viewer)
       }, 30000)
 
     } catch (error) {
