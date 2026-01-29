@@ -1,5 +1,6 @@
 <script setup>
 import {ref} from "vue";
+import Email from "@/components/notification/Email.vue"
 
 const lat = ref(0)
 const lng = ref(0)
@@ -36,6 +37,7 @@ function send(lat, lng){
           <input v-model="lng" type="number" class="input input-xs" placeholder="6.13838333" />
           </fieldset>
           <button type="submit" @click="send(lat, lng)" class="btn btn-neutral mt-8">Find</button>
+          <Email />
   </div>
   </div>
 

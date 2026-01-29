@@ -8,6 +8,7 @@ import uvicorn
 from fastapi import FastAPI, Query, HTTPException
 from fetchFlights import get_flights
 from fastapi.middleware.cors import CORSMiddleware
+from gmail import router as email_router
 
 app = FastAPI()
 
@@ -23,6 +24,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(email_router, prefix="/api")
 
 @app.get("/flights")
 def get_flights_endpoint(
