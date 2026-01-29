@@ -1,6 +1,8 @@
 # Planium
 
-Planium is an application for fan of astrology and photos of planes in front of the moon.
+Planium is a tool for visualizing airplanes, as well as the moon and the sun.
+It also allows you to predict 30 seconds before an airplane passes in front of the moon.
+Planium makes a rare event accessible: taking a capture of a Moon–aircraft alignment.
 
 ## Stacks
 - [Vue.js](https://vuejs.org/)
@@ -12,7 +14,11 @@ Planium is an application for fan of astrology and photos of planes in front of 
 
 ## Requirements
 - Node.js 20.19.0+
+- https://nodejs.org/en/download
+
+
 - Python 3.10+
+- https://www.python.org/downloads/
 
 ## Prerequisites
 - [A Cesium ion account](https://ion.cesium.com) (To Downloads and load assets)
@@ -26,6 +32,11 @@ Planium is an application for fan of astrology and photos of planes in front of 
 2. Go to [your account dashboard](https://ion.cesium.com/assets/?). Drag and drop the model file on this page.
 3. Select **3D Model (Convert to glTF)**, then click **Upload**.
 4. After it’s done processing, find the **asset ID** by selecting the new asset back in your dashboard and looking under the preview window on the right.
+
+## Create the .env file
+1) Create a .env file at the root of the project.
+2) Paste the content of the file ".env.example"
+3) Replace the variable values with your own.
 
 ## Project Setup
 
