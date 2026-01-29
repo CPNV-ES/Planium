@@ -27,7 +27,7 @@ const reticleStyle = computed(() => { // adjust reticle to moon's size
 
 // point miniViewer's camera to Moon reactively
 function updateMiniView() {
-  if (!props.moonPos || !miniViewer || !props.mainViewer.camera.position) return
+  if (!props.moonPos || !miniViewer || !miniViewer.scene || miniViewer.isDestroyed() || !props.mainViewer.camera.position) return
 
   const Cesium = props.Cesium
   const mainCamera = props.mainViewer.camera
