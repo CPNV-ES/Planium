@@ -149,15 +149,15 @@ export async function updatePlanes(viewer, location){
     if (data.length > 0){
 
         if (viewer.entities !== undefined) {
-            viewer.entities.values.forEach(async (entity) => {
+            for (const entity of viewer.entities.values) {
                     const flight = data.find(flight => entity.id.includes(flight.id))
                     if(flight !== undefined){
                         await addNextPostion(determinatePlane(flight, 60), entity, getNextTimeBySecond(viewer, 60))
                     }else if(entity.id.includes('plane') ){
                         viewer.entities.remove(entity)
                     }
-                })
-            }
+                }
+        }
 
             await addNewPlanes(viewer, data)
         }
