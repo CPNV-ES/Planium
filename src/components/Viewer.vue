@@ -58,12 +58,11 @@ const onViewerReady = async ({Cesium, viewer}) => {
         console.error("Moon Component Ref is NULL. Check if Moon is inside a v-if.");
       }
 
-      try {
+      // try {
         location.value = await getLocation(viewer)
-      } catch (geoError) {
-        console.warn("Geolocation denied, using default coordinates (Ste-Croix).");
-        location.value = {lat: 46.8221, long: 6.5015}
-      }
+      // } catch (geoError) {
+      //   console.warn("Geolocation denied, using default coordinates (Ste-Croix).");
+      // }
 
       mapViewer.value = viewer
       cesium.value = Cesium
