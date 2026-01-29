@@ -1,7 +1,14 @@
 <script setup>
 import {VcViewer} from "vue-cesium";
 import {nextTick, ref} from "vue";
-import {loadPlanes, updatePlanes, prepareScene, removeMoving, sendToLogFile} from "@/utils/scene.js";
+import {
+  loadPlanes,
+  updatePlanes,
+  prepareScene,
+  removeMoving,
+  sendToLogFile,
+  checkIfPlaneIsCloseToTheMoon
+} from "@/utils/scene.js";
 import Imagery from "@/components/imagery/Imagery.vue";
 import {flyTo} from "@/utils/camera.js";
 import Navigation from "@/components/navigation/Navigation.vue";
@@ -51,12 +58,7 @@ const onViewerReady = async ({Cesium, viewer}) => {
         console.error("Moon Component Ref is NULL. Check if Moon is inside a v-if.");
       }
 
-      try {
-        location.value = await getLocation(viewer)
-      } catch (geoError) {
-        console.warn("Geolocation denied, using default coordinates (Ste-Croix).");
-        location.value = {lat: 46.8221, long: 6.5015}
-      }
+      location.value = await getLocation(viewer)
 
       mapViewer.value = viewer
       cesium.value = Cesium
@@ -71,6 +73,10 @@ const onViewerReady = async ({Cesium, viewer}) => {
           await sendToLogFile()
         }
       }, 59000)
+
+      setInterval(async () => {
+        checkIfPlaneIsCloseToTheMoon(mapViewer.value)
+      }, 30000)
 
     } catch (error) {
       console.error("Error loading tileset:", error);
@@ -114,13 +120,13 @@ async function onLocationSubmitted(e){
           :cesium="cesium"
           :moonComponent="moonComponentRef"
       />
-      <MoonMiniViewer
-          v-if="cesium && mapViewer"
-          :mainViewer="mapViewer"
-          :Cesium="cesium"
-          :moonPos="moonComponentRef?.moonPos"
-          :planes="planeData"
-      />
+<!--      <MoonMiniViewer-->
+<!--          v-if="cesium && mapViewer"-->
+<!--          :mainViewer="mapViewer"-->
+<!--          :Cesium="cesium"-->
+<!--          :moonPos="moonComponentRef?.moonPos"-->
+<!--          :planes="planeData"-->
+<!--      />-->
       <CameraController v-if="isViewerReady" :viewer="mapViewer" />
       <CompassIndicator v-if="isViewerReady" :viewer="mapViewer" />
       <CoordinateForm @submit="onLocationSubmitted"/>
