@@ -103,7 +103,7 @@ onMounted(async () => {
 
   miniViewer.clock.currentTime = mainViewer.clock.currentTime; // sync clock
   mainViewer.camera.changed.addEventListener(updateMiniView) // sync camera
-  await loadPlanes(miniViewer)  // load plane assets
+  // await loadPlanes(miniViewer)  // load plane assets
 })
 
 onUnmounted(() => {
@@ -123,9 +123,9 @@ watch(moonWidthMultiplier, updateMiniView);
 // react to Moon position
 watch(() => props.moonPos, updateMiniView, { deep: true });
 // react to planes data
-watch(() => props.planes, (newData) => {
-  if (miniViewer) updatePlanes(miniViewer, newData);
-}, { deep: true });
+// watch(() => props.planes, (newData) => {
+//   if (miniViewer) updatePlanes(miniViewer, newData);
+// }, { deep: true });
 
 </script>
 
