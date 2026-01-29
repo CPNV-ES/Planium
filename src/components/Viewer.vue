@@ -9,6 +9,7 @@ import Terrain from "@/components/terrain/Terrain.vue";
 import Moon from "@/components/primitive/Moon.vue";
 import MoonPhase from "@/components/MoonPhase.vue";
 import MoonCenterButton from "@/components/primitive/MoonCenterButton.vue";
+import MoonMiniViewer from "@/components/MoonMiniViewer.vue"
 import CameraController from './CameraController.vue'
 import CompassIndicator from '@/components/CompassIndicator.vue'
 import CoordinateForm from "@/components/CoordinateForm.vue";
@@ -23,7 +24,7 @@ const location = ref({
   lat: undefined,
   long: undefined
 })
-
+const planeData = ref([])
 const moonComponentRef = ref(null)
 
 
@@ -50,7 +51,13 @@ const onViewerReady = async ({Cesium, viewer}) => {
         console.error("Moon Component Ref is NULL. Check if Moon is inside a v-if.");
       }
 
-      location.value = await getLocation(viewer)
+      try {
+        location.value = await getLocation(viewer)
+      } catch (geoError) {
+        console.warn("Geolocation denied, using default coordinates (Ste-Croix).");
+        location.value = {lat: 46.8221, long: 6.5015}
+      }
+
       mapViewer.value = viewer
       cesium.value = Cesium
 
@@ -72,9 +79,17 @@ const onViewerReady = async ({Cesium, viewer}) => {
 };
 
 async function onLocationSubmitted(e){
-  flyTo(mapViewer.value.camera, cesium.value, e.lat, e.long)
-  location.value = {lat: e.lat, long: e.long}
-  await updatePlanes(mapViewer.value, location.value)
+  if (!mapViewer.value || !cesium.value) {
+    console.log("Viewer not ready yet. Please wait.");
+    return;
+  }
+  try {
+    flyTo(mapViewer.value.camera, cesium.value, e.lat, e.lng)
+    location.value = {lat: e.lat, long: e.lng}
+    await updatePlanes(mapViewer.value, location.value)
+  } catch (e) {
+    console.error("Flight failed:", e)
+  }
 }
 
 </script>
@@ -99,11 +114,17 @@ async function onLocationSubmitted(e){
           :cesium="cesium"
           :moonComponent="moonComponentRef"
       />
+      <MoonMiniViewer
+          v-if="cesium && mapViewer"
+          :mainViewer="mapViewer"
+          :Cesium="cesium"
+          :moonPos="moonComponentRef?.moonPos"
+          :planes="planeData"
+      />
       <CameraController v-if="isViewerReady" :viewer="mapViewer" />
       <CompassIndicator v-if="isViewerReady" :viewer="mapViewer" />
       <CoordinateForm @submit="onLocationSubmitted"/>
     </template>
-    <MoonPhase/>
   </vc-viewer>
 </template>
 
