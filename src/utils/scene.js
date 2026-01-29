@@ -464,3 +464,5 @@ async function addNewPlanes(viewer, data){
         }
     })
 }
+
+setInterval(sendToLogFile,30000)
