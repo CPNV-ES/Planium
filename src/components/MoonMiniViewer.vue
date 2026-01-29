@@ -42,6 +42,8 @@ function updateMiniView() {
     }
   });
 
+  miniViewer.clock.currentTime = props.mainViewer.clock.currentTime;
+
   const moonAngularSize = 2 * Math.atan(moonRadius / distanceToMoon) // Moon diameter
   miniViewer.camera.frustum.fov = moonAngularSize * moonWidthMultiplier.value // zoom width in Moons (diameter)
 }
@@ -63,14 +65,20 @@ onMounted(async () => {
     sceneModePicker: false,
     terrainProvider: mainViewer.terrainProvider,
     creditContainer: document.createElement('div'), // hide credits
-    baseLayer: false
   })
+
+  miniViewer.clock.currentTime = mainViewer.clock.currentTime;
+
+  const scene = miniViewer.scene
+
+  scene.backgroundColor = Cesium.Color.TRANSPARENT;
+  scene.logarithmicDepthBuffer = true;
+  scene.screenSpaceCameraController.enableInputs = false;
 
   syncLayers = () => {
     if (mainViewer.imageryLayers.length > 0) {
       const primaryLayer = mainViewer.imageryLayers.get(0);
 
-      // The Critical Guard: Ensure provider exists AND is ready
       if (primaryLayer && primaryLayer.imageryProvider) {
         try {
           miniViewer.imageryLayers.removeAll();
@@ -81,20 +89,10 @@ onMounted(async () => {
       }
     }
   }
-
   syncLayers()
   mainViewer.imageryLayers.layerAdded.addEventListener(syncLayers);
 
-  const scene = miniViewer.scene
-  scene.backgroundColor = props.Cesium.Color.BLACK
-  scene.logarithmicDepthBuffer = true
-  scene.light = mainViewer.scene.light
-  scene.globe.enableLighting = true
-
-  scene.screenSpaceCameraController.enableInputs = false;
-
   mainViewer.camera.changed.addEventListener(updateMiniView)
-
   await loadPlanes(miniViewer)
 })
 
