@@ -470,12 +470,11 @@ async function addNewPlanes(viewer, data){
     }
 }
 
-export async function checkIfPlaneIsCloseToTheMoon(viewer) {
-    for (const entity of viewer.entities.values) {
-        if (entity.id.includes('plane')) {
-            await calculateMoonPlane(entity, viewer)
-        }
-    }
+export async function checkIfPlaneIsCloseToTheMoon(viewer, location) {
+    const data = await getFLights('http://localhost:8080/flights', {long:location.long , lat: location.lat})
+    data.forEach(flight => {
+        calculateMoonPlane(flight, viewer)
+    })
 }
 
 // Source : https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval
