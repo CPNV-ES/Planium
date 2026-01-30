@@ -73,9 +73,10 @@ def write_logs(log : Log):
     os.makedirs(logs_dir, exist_ok=True)
 
     log_file_path = os.path.join(logs_dir, "log.txt")
-
     with open(log_file_path, "a", encoding="utf-8") as log_file:
         log_file.write(f"{log.message}\n")
+        log_file.flush()
+        os.fsync(log_file.fileno())
     return {"message": "Logs were added"}
 
 

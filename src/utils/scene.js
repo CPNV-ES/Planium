@@ -449,7 +449,7 @@ async function calculateMoonPlane(flight,viewer) {
             logs.set(key, `Aircraft pass close to the moon | Camera : ${cameraPos} | Aircraft ID : ${flight.id} 
             | Time : ${logTime}`);
             if(user_email !== undefined){
-                await sendEmail(user_email, ` ${logTime} : Aircraft pass in front of the moon | Camera : ${cameraPos} | Aircraft ID : ${flight.id} `)
+                await sendEmail(user_email, ` ${logTime} : Aircraft pass close of the moon | Camera : ${cameraPos} | Aircraft ID : ${flight.id} `)
             }
         }
     }
@@ -470,12 +470,11 @@ async function addNewPlanes(viewer, data){
     }
 }
 
-export async function checkIfPlaneIsCloseToTheMoon(viewer) {
-    for (const entity of viewer.entities.values) {
-        if (entity.id.includes('plane')) {
-            await calculateMoonPlane(entity, viewer)
-        }
-    }
+export async function checkIfPlaneIsCloseToTheMoon(viewer, location) {
+    const data = await getFLights('http://localhost:8080/flights', {long:location.long , lat: location.lat})
+    data.forEach(flight => {
+        calculateMoonPlane(flight, viewer)
+    })
 }
 
 // Source : https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval
