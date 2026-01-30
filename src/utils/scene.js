@@ -1,4 +1,5 @@
 import {getFLights} from "@/utils/api.js";
+import {getEmail, sendEmail} from "@/utils/mail.js";
 
 // data structure that allows logs to be stored
 // Source : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map
@@ -73,7 +74,7 @@ export function removeMoving(scene){
     scene.screenSpaceCameraController.enableRotate = false;
 }
 export async function loadPlanes(viewer, location){
-    const airplaneUri = await Cesium.IonResource.fromAssetId(4373030);
+    const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
     const data = await getFLights('http://localhost:8080/flights', {long: location.long , lat: location.lat})
 
     if(data !== undefined) {
@@ -183,6 +184,7 @@ export async function sendToLogFile() {
     // Source : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from
     // Convert map to array
     let logsArray = Array.from(logs.values());
+
     const url = "http://localhost:8080/logs"
 
     try {
@@ -269,7 +271,7 @@ function determinatePlane(flight, delta_time) {
     return Cesium.Cartesian3.fromDegrees(new_long, new_lat, new_alt);
 }
 
-function calculateMoonPlane(flight,viewer) {
+async function calculateMoonPlane(flight,viewer) {
     /*
     Prompt to Claude :
     If I have a person P (with coordinates x, y, z),
@@ -426,12 +428,18 @@ function calculateMoonPlane(flight,viewer) {
     const key = `${flight.id}`
 
     const currentLog = logs.get(flight.id);
+    const user_email = getEmail()
+
     if (corner_O <= moonAngularRadius) {
         if (!currentLog) {
             const closestDate = new Date(Date.now() + t_closest * 1000);
             const logTime = closestDate.toISOString();
             logs.set(key, `Aircraft pass in front of the moon | Camera : ${cameraPos} | Aircraft ID : ${flight.id} 
             | Time : ${logTime}`);
+
+            if(user_email !== undefined){
+                await sendEmail(user_email, ` ${logTime} : Aircraft pass in front of the moon | Camera : ${cameraPos} | Aircraft ID : ${flight.id} `)
+            }
         }
     } else if (corner_O <= closeTheMoon) {
         // Source : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/startsWith
@@ -440,13 +448,16 @@ function calculateMoonPlane(flight,viewer) {
             const logTime = closestDate.toISOString();
             logs.set(key, `Aircraft pass close to the moon | Camera : ${cameraPos} | Aircraft ID : ${flight.id} 
             | Time : ${logTime}`);
+            if(user_email !== undefined){
+                await sendEmail(user_email, ` ${logTime} : Aircraft pass in front of the moon | Camera : ${cameraPos} | Aircraft ID : ${flight.id} `)
+            }
         }
     }
 }
 
 async function addNewPlanes(viewer, data){
-    const airplaneUri = await Cesium.IonResource.fromAssetId(4373030);
-    data.forEach(async (flight) => {
+    const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
+    for (const flight of data) {
         if (viewer.entities.values.find(entity => entity.id.includes(flight.id)) === undefined){
             const positionProperty = new Cesium.SampledPositionProperty();
             const position = Cesium.Cartesian3.fromDegrees(flight.long, flight.lat, flight.alt)
@@ -456,14 +467,15 @@ async function addNewPlanes(viewer, data){
             await loadModel(viewer, viewer.clock.currentTime, viewer.clock.stopTime, positionProperty, airplaneUri, flight.id)
             positionProperty.addSample(getNextTimeBySecond(viewer, 60), determinatePlane(flight, 60))
         }
-    })
+    }
 }
 
-export async function checkIfPlaneIsCloseToTheMoon(viewer, location) {
-    const data = await getFLights('http://localhost:8080/flights', {long:location.long , lat: location.lat})
-    data.forEach(flight => {
-            calculateMoonPlane(flight, viewer)
-    })
+export async function checkIfPlaneIsCloseToTheMoon(viewer) {
+    for (const entity of viewer.entities.values) {
+        if (entity.id.includes('plane')) {
+            await calculateMoonPlane(entity, viewer)
+        }
+    }
 }
 
 // Source : https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval

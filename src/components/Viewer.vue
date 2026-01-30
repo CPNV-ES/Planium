@@ -74,6 +74,7 @@ const onViewerReady = async ({Cesium, viewer}) => {
       }, 59000)
 
       setInterval(async () => {
+        await checkIfPlaneIsCloseToTheMoon(viewer)
         await checkIfPlaneIsCloseToTheMoon(viewer, location.value)
         await sendToLogFile()
       }, 30000)
