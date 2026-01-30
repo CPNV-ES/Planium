@@ -73,7 +73,7 @@ export function removeMoving(scene){
     scene.screenSpaceCameraController.enableRotate = false;
 }
 export async function loadPlanes(viewer, location){
-    const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
+    const airplaneUri = await Cesium.IonResource.fromAssetId(4373030);
     const data = await getFLights('http://localhost:8080/flights', {long: location.long , lat: location.lat})
 
     if(data !== undefined) {
@@ -183,7 +183,6 @@ export async function sendToLogFile() {
     // Source : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from
     // Convert map to array
     let logsArray = Array.from(logs.values());
-
     const url = "http://localhost:8080/logs"
 
     try {
@@ -421,13 +420,12 @@ function calculateMoonPlane(flight,viewer) {
     const corner_O = Math.acos(cos_theta_clamped);
 
     const moonAngularRadius = 0.0045
-    const closeTheMoon = 0.0135
+    const closeTheMoon = (0.0135)*2
 
     // Source : https://developer.mozilla.org/fr/docs/Web/JavaScript/Reference/Global_Objects/Map/has
     const key = `${flight.id}`
 
     const currentLog = logs.get(flight.id);
-
     if (corner_O <= moonAngularRadius) {
         if (!currentLog) {
             const closestDate = new Date(Date.now() + t_closest * 1000);
@@ -447,7 +445,7 @@ function calculateMoonPlane(flight,viewer) {
 }
 
 async function addNewPlanes(viewer, data){
-    const airplaneUri = await Cesium.IonResource.fromAssetId(4359085);
+    const airplaneUri = await Cesium.IonResource.fromAssetId(4373030);
     data.forEach(async (flight) => {
         if (viewer.entities.values.find(entity => entity.id.includes(flight.id)) === undefined){
             const positionProperty = new Cesium.SampledPositionProperty();
@@ -461,11 +459,10 @@ async function addNewPlanes(viewer, data){
     })
 }
 
-export function checkIfPlaneIsCloseToTheMoon(viewer) {
-    viewer.entities.values.forEach(entity => {
-        if (entity.id.includes('plane')) {
-            calculateMoonPlane(entity, viewer)
-        }
+export async function checkIfPlaneIsCloseToTheMoon(viewer, location) {
+    const data = await getFLights('http://localhost:8080/flights', {long:location.long , lat: location.lat})
+    data.forEach(flight => {
+            calculateMoonPlane(flight, viewer)
     })
 }
 
