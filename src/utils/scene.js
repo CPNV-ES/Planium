@@ -449,7 +449,7 @@ async function calculateMoonPlane(flight,viewer) {
             logs.set(key, `Aircraft pass close to the moon | Camera : ${cameraPos} | Aircraft ID : ${flight.id} 
             | Time : ${logTime}`);
             if(user_email !== undefined){
-                await sendEmail(user_email, ` ${logTime} : Aircraft pass in front of the moon | Camera : ${cameraPos} | Aircraft ID : ${flight.id} `)
+                await sendEmail(user_email, ` ${logTime} : Aircraft pass close of the moon | Camera : ${cameraPos} | Aircraft ID : ${flight.id} `)
             }
         }
     }
