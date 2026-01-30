@@ -422,7 +422,7 @@ async function calculateMoonPlane(flight,viewer) {
     const corner_O = Math.acos(cos_theta_clamped);
 
     const moonAngularRadius = 0.0045
-    const closeTheMoon = 0.0135
+    const closeTheMoon = (0.0135)*2
 
     // Source : https://developer.mozilla.org/fr/docs/Web/JavaScript/Reference/Global_Objects/Map/has
     const key = `${flight.id}`

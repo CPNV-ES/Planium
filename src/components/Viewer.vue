@@ -70,12 +70,13 @@ const onViewerReady = async ({Cesium, viewer}) => {
       setInterval(async () => {
         if (mapViewer.value !== undefined){
           await updatePlanes(viewer, location.value)
-          await sendToLogFile()
         }
       }, 59000)
 
       setInterval(async () => {
         await checkIfPlaneIsCloseToTheMoon(viewer)
+        await checkIfPlaneIsCloseToTheMoon(viewer, location.value)
+        await sendToLogFile()
       }, 30000)
 
     } catch (error) {
